@@ -243,7 +243,7 @@ class LaueAssigner():
         self.H = None
         self.RB = np.array(RB)
         self.ewald_offset = None
-        self.L = None
+        self.wavelengths = None
         self.assign()
 
     def assign(self):
@@ -293,6 +293,7 @@ class LaueAssigner():
         H_best = Hall[feasible][idx]
         self.ewald_offset = np.linalg.norm(Qlpred[idx] - Q, axis=1)
         self.H = H_best
+        self.wavelengths = lpred[idx]
         return self
 
     def optimize_bases(self, rlp_radius=0.002, steps=10):

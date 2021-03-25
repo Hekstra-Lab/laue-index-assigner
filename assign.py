@@ -95,5 +95,9 @@ plt.plot(pixpos[correct,0], pixpos[correct,1], 'k.', label='Correct')
 plt.plot(pixpos[~correct,0], pixpos[~correct,1], 'r.', label='Inorrect')
 plt.legend()
 
-plt.show()
+plt.figure()
+plt.plot(lam, la.wavelengths, 'k.')
+plt.xlabel("Wavelength (Precognition)")
+plt.ylabel("Wavelength")
 
+plt.show()
