@@ -5,9 +5,6 @@ import numpy as np
 import reciprocalspaceship as rs
 import gemmi
 
-from IPython import embed
-from sys import exit
-
 # These are the hyperparameters of the indexer =>
 lam_min,lam_max = 0.95, 1.3
 dmin = 1.4
