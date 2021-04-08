@@ -58,6 +58,7 @@ def align_hkls(reference, target, spacegroup, anomalous=True):
     aligned : array
         n x 3 array of miller indices equivalent to target
     """
+    print('started')
     aligned = target
     cc = np.corrcoef(reference, aligned).sum()
     for op in spacegroup.operations():
@@ -67,7 +68,9 @@ def align_hkls(reference, target, spacegroup, anomalous=True):
         if cc_ > cc:
             aligned = aligned_
             cc = cc_
+    print('finished loop')
     if anomalous:
+        print('conditional executed')
         for op in spacegroup.operations():
             aligned_ = -rs.utils.apply_to_hkl(target, op)
             cc_ = np.corrcoef(reference, aligned_).sum()
