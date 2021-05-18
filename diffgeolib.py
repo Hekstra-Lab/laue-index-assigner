@@ -1,6 +1,7 @@
 import numpy as np
 import reciprocalspaceship as rs
 import gemmi
+from IPython import embed
 
 
 """
