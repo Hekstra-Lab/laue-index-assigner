@@ -22,8 +22,9 @@ inp_file = "data/e080_003.mccd.inp"
 #expt_file = "data/split_000.expt" #<= output from the scan varying model we shipped to derek. 
 expt_file = "/home/rahewitt/dhfr_data/dials_temp_files/1ims/expected_index.expt" #<= output from the scan varying model we shipped to derek. 
 # ^^using goniometer maths, this could be replaced with the output of dials.index.
+refl_file = "/home/rahewitt/dhfr_data/dials_temp_files/1ims/strong_1.070490100011937.refl"
 #refl_file = "data/strong.refl" #<= `dials.find_spots {image_path}/*_001.mccd gain=0.1`
-refl_file = "/home/rahewitt/dhfr_data/dials_temp_files/1ims/expected_index.refl" #<= `dials.find_spots {image_path}/*_001.mccd gain=0.1`
+#refl_file = "/home/rahewitt/dhfr_data/dials_temp_files/1ims/expected_index.refl" #<= `dials.find_spots {image_path}/*_001.mccd gain=0.1`
 
 ds = rs.read_precognition(ii_file).reset_index()
 
@@ -66,7 +67,7 @@ step = experiment.scan.get_oscillation()[1]
 frame = 3
 gonio_setting_matrix = matrix.sqr(experiment.goniometer.get_setting_rotation())
 gonio_axis = matrix.col(experiment.goniometer.get_rotation_axis())
-A_mat = gonio_axis.axis_and_angle_as_r3_rotation_matrix(angle=experiment.scan.get_angle_from_array_index(frame)- 2*(step / 2), deg=True,)* gonio_setting_matrix* matrix.sqr(c.get_A())
+A_mat = gonio_axis.axis_and_angle_as_r3_rotation_matrix(angle=experiment.scan.get_angle_from_array_index(frame)- (step / 2), deg=True,)* gonio_setting_matrix* matrix.sqr(c.get_A())
 RB = np.array(A_mat).reshape((3,3))
 O = np.array(uc.orthogonalization_matrix()).reshape((3,3))
 B = np.linalg.inv(O).T
@@ -78,7 +79,7 @@ print('applied rotations')
 detector = next(Detector.from_expt_file(expt_file))
 
 s0 = np.array([0., 0., -1.])
-s1 = detector.pix2lab(pixpos)
+s1 = detector.pix2lab(train_pixpos)
 s1 = s1/np.linalg.norm(s1, axis=1)[:,None]
 Q = (s1 - s0)
 
@@ -101,7 +102,6 @@ print('did this stuff')
 hkl = align_hkls(href, hkl.T, ds.spacegroup)
 print('did hkls')
 #assert np.allclose(href, hkl, atol=3.)
-embed()
 
 plt.figure()
 plt.title("Millers Before Optimization")
