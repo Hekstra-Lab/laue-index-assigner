@@ -60,18 +60,19 @@ def align_hkls(reference, target, spacegroup, anomalous=True):
         n x 3 array of miller indices equivalent to target
     """
     aligned = target
-    cc = np.corrcoef(reference, aligned).sum()
+    cc = -1.
     for op in spacegroup.operations():
         aligned_ = rs.utils.apply_to_hkl(target, op)
-        cc_mat = aligned_.T@reference
-        cc_ = np.trace(cc_mat)
+        cc_mat = np.corrcoef(aligned_.T, reference.T)
+        cc_ = np.trace(cc_mat[:3,3:])
         if cc_ > cc:
             aligned = aligned_
             cc = cc_
     if anomalous:
         for op in spacegroup.operations():
             aligned_ = -rs.utils.apply_to_hkl(target, op)
-            cc_ = np.corrcoef(reference, aligned_).sum()
+            cc_mat = np.corrcoef(aligned_.T, reference.T)
+            cc_ = np.trace(cc_mat[:3,3:])
             if cc_ > cc:
                 aligned = aligned_
                 cc = cc_

@@ -17,22 +17,11 @@ n_steps = 10
 new_refl_filename = 'optimized.refl'
 
 # Load DIALS files
-#expt_file = "/home/rahewitt/dhfr_data/dials_temp_files/1ims/expected_index.expt"
-#refl_file = "/home/rahewitt/dhfr_data/dials_temp_files/1ims/strong_1.070490100011937.refl"
-#refl_file = "/home/rahewitt/dhfr_data/dials_temp_files/strong_1.070490100011937.refl"
-#refl_file = "/home/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/strong_1.04.refl"
-#refl_file = "data/strong.refl"
-#expt_file = "/home/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/expected_index.expt"
-expt_file = "/home/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/refined_varying.expt"
-refl_file = "/home/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/strong_1.04.refl"
-#expt_file = "/home/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/updated.expt"
-#refl_file = "/home/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/refined_varying.refl"
-#expt_file = "/home/rahewitt/Downloads/peak_refined.expt"
-#refl_file = "/home/rahewitt/Downloads/peak_refined.refl"
-#refl_file = "/home/rahewitt/dhfr_data/dials_temp_files/strong.refl"
+expt_file = "" #<-- Fill this in
+refl_file = "" #<-- Fill this in
+
 elist = ExperimentListFactory.from_json_file(expt_file, check_format=False)
 refls = reflection_table.from_file(refl_file)
-refls.split_partials_with_shoebox()
 
 # Get experiment data from experiment objects
 experiment = elist[0]
@@ -47,8 +36,8 @@ df = pd.DataFrame(index=np.zeros(len(refls)), columns=['H', 'K', 'L', 's1_0', 's
 for i in tqdm(np.arange(elist[0].imageset.size())):
     # Get reflections for this image
 #    idx = (refls['shoebox'].bounding_boxes().parts()[4] == i)
-    embed()
-    idx = ((refls['shoebox'].centroid_all().position_frame() - 0.5).round() == i)
+#    idx = ((refls['shoebox'].centroid_all().position_frame() - 0.5).round() == i)
+    idx = (refls['xyzobs.px.value'].parts()[2] - 0.5 == i)
 
     # Get pixel positions
     pix_position = refls['xyzobs.px.value'].as_numpy_array()[:, 0:2][idx]
@@ -58,8 +47,8 @@ for i in tqdm(np.arange(elist[0].imageset.size())):
     gonio_setting_matrix = matrix.sqr(experiment.goniometer.get_setting_rotation())
     gonio_axis = matrix.col(experiment.goniometer.get_rotation_axis())
     A_mat = gonio_axis.axis_and_angle_as_r3_rotation_matrix(\
-            angle=experiment.scan.get_angle_from_array_index(int(i))+ (step / 2),\
-            deg=True,)* gonio_setting_matrix* matrix.sqr(cryst.get_A_at_scan_point(int(i)))
+            angle=experiment.scan.get_angle_from_array_index(int(i)) + (step / 2),\
+            deg=True,) * gonio_setting_matrix * matrix.sqr(cryst.get_A_at_scan_point(int(i)))
     RB = np.array(A_mat).reshape((3,3))
 
     # Generate unit cell vectors
