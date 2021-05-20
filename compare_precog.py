@@ -40,7 +40,8 @@ dials_df['H'] = refls['miller_index'].parts()[0].as_numpy_array()
 dials_df['K'] = refls['miller_index'].parts()[1].as_numpy_array()
 dials_df['L'] = refls['miller_index'].parts()[2].as_numpy_array()
 dials_df['Wavelength'] = refls['Wavelength'].as_numpy_array()
-dials_df['BATCH'] = refls['shoebox'].bounding_boxes().parts()[4]
+#dials_df['BATCH'] = refls['shoebox'].bounding_boxes().parts()[4]
+dials_df['BATCH'] = refls['xyzobs.px.value'].parts()[2].as_numpy_array() - 0.5
 
 print('getting HKL matrices')
 dials_hkl = dials_df[['H','K','L']].to_numpy().astype(int).T
