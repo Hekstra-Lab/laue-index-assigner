@@ -4,7 +4,7 @@
 REL_PATH="$PWD"
 
 # Parameters
-FILE_INPUT_TEMPLATE="/home/rahewitt/e080_raw_data/e080_###.mccd" 
+FILE_INPUT_TEMPLATE="${DHFRMCCDDIR}/e080_###.mccd" # Env variable set by config.sh
 FILE_OUTPUT_TEMPLATE="${REL_PATH}/dials_temp_files/"
 # EXPECTED_WAVELENGTH=1.070490100011937
 EXPECTED_WAVELENGTH=1.04
@@ -48,9 +48,9 @@ dials.index "${FILE_OUTPUT_TEMPLATE}imported_${EXPECTED_WAVELENGTH}.expt" "${FIL
   output.reflections="${FILE_OUTPUT_TEMPLATE}expected_index.refl"
 
 dials.refine "${FILE_OUTPUT_TEMPLATE}expected_index.expt" "${FILE_OUTPUT_TEMPLATE}expected_index.refl" \
-  refinement.parameterisation.goniometer.fix=None \
+  refinement.parameterisation.goniometer.fix=None \ # Consider fixing entirely as proxy for detector.orientation
   refinement.parameterisation.beam.fix=all \
-  refinement.parameterisation.detector.fix=orientation \
+  refinement.parameterisation.detector.fix=orientation \ # Consider fixing Distance
   refinement.parameterisation.scan_varying=True \
   refinement.reflections.outlier.algorithm=tukey \
   refinement.reflections.outlier.tukey.iqr_multiplier=$TUKEY_MULTIPLIER \
