@@ -120,8 +120,7 @@ for i in tqdm(np.arange(elist[0].imageset.size())):
 
     # Check correctness of matching
     correct = is_ray_equivalent(aligned_hkls, dials_hkl[:,dials_idx].T)
-    print(sum(correct))
-    print(len(correct))
+    print(sum(correct)/len(correct))
     percent_correct[i] = sum(correct)/len(correct)
 
     if (i == 2):
