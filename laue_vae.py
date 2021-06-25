@@ -11,6 +11,7 @@ xy_batch_size = 32
 n_layers  = 20
 mpl_width = 10
 hmax = 50
+kl_weight=1.
 
 class IndexGenerator(tfk.layers.Layer):
     def __init__(self, hkl_max, s_0, lam_min, lam_max):
@@ -37,10 +38,6 @@ class IndexGenerator(tfk.layers.Layer):
 ig = IndexGenerator((10, 10, 10), np.array([0, 0, -1.]), 1., 1.2)
 h = ig(tf.eye(3)/50.)
 
-from IPython import embed
-from sys import exit
-embed(colors='linux')
-exit()
 
 class SigmaSoftplus(tfk.layers.Layer):
     def call(self, inputs):
@@ -61,23 +58,6 @@ class NormalVariational(tfk.layers.Layer):
             kl_div = q.log_prob(z) - self.prior.log_prob(z)
             self.add_loss(kl_div)
         return  z
-
-class ConcatMillerLayer():
-    def __init__(self, hmax, base_loss=None):
-        super().__init__()
-        self.hmax
-        h,k,l = self.hmax
-        self.Hall = np.mgrid[
-                -h:h+1:2*h+1,
-                -k:k+1:2*k+1,
-                -l:l+1:2*l+1,
-            ].reshape((-1, 3))
-        if base_loss is None:
-            self._base_loss = tfk.losses.MSE()
-
-    def call(self, inputs):
-        z = self.inputs
-        return tf.stack((z*tf.ones((self.Hall.shape[0], 1)), self.Hall), axis=-1)
 
 class Ortho6DToMatrix(tfk.layers.Layers):
     def call(self, ortho_6d):
@@ -105,7 +85,7 @@ blayers.extend([tfk.layers.Dense((xy_batch_size, 2), activation=tfk.activations.
 blayers.extend([tfk.layers.Dense(mlp_width, activation=tfk.activations.LeakyReLU()) for i in range(n_layers)])
 rlayers.append(tfk.layers.Dense(6, activation='linear'))
 blayers.append(SigmaSoftplus())
-blayers.append(NormalVariational())
+blayers.append(NormalVariational(pcell, kl_weight))
 
 rlayers = []
 blayers.extend([tfk.layers.Dense((xy_batch_size, 2), activation=tfk.activations.LeakyReLU()) for i in range(n_layers)])
