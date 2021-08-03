@@ -50,6 +50,28 @@ precog_hkl = precog_df[['H','K','L']].to_numpy().astype(int).T
 print('initializing metrics')
 percent_correct = np.zeros(elist[0].imageset.size())
 
+# Quiver plot of HKLs normalized to visualize density
+num_refls = len(dials_hkl[0,:])
+sphere_radius = 1
+abc = np.asarray(elist[0].crystal.get_unit_cell().parameters()[0:3]) # Not generalized for all space groups
+abc_norm = abc/max(abc)
+uvw = dials_hkl.astype(float)
+uvw[0,:] = uvw[0,:]*abc_norm[0] # Transform from H to Cartesian U
+uvw[1,:] = uvw[1,:]*abc_norm[1] # Transform from K to Cartesian V
+uvw[2,:] = uvw[2,:]*abc_norm[2] # Transform from L to Cartesian W
+uvw = sphere_radius*uvw/np.linalg.norm(uvw, axis=0) # Normalize uvw
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.set_title('Normalized HKL vectors')
+ax.set_xlim([-sphere_radius,sphere_radius])
+ax.set_ylim([-sphere_radius,sphere_radius])
+ax.set_zlim([-sphere_radius,sphere_radius])
+ax.set_xlabel('normalized H')
+ax.set_ylabel('normalized K')
+ax.set_zlabel('normalized L')
+ax.scatter(uvw[0],uvw[1],uvw[2], marker='.')
+plt.show()
+
 # Iterate by frame and match HKLs, seeing what percentage are correct
 for i in tqdm(np.arange(elist[0].imageset.size())):
     # Get reflection indices from each batch
@@ -60,7 +82,6 @@ for i in tqdm(np.arange(elist[0].imageset.size())):
     dials_xy = dials_df[['X', 'Y']].to_numpy().astype(float)[dials_idx]
     precog_xy = precog_df[['X', 'Y']].to_numpy().astype(float)[precog_idx]
     precog_xy_filtered = np.zeros(dials_xy.shape)
-
     # Filter out extraneous precog refls
     precog_filter = np.full(len(precog_xy), np.inf)
     for j in np.arange(len(dials_xy)):                                                  
@@ -73,14 +94,13 @@ for i in tqdm(np.arange(elist[0].imageset.size())):
     # Align precog to DIALS hkls
     aligned_hkls = align_hkls(dials_hkl[:, dials_idx].T, precog_img_hkl.T, precog_df.spacegroup)
 
-
     if i in [0, 100, 178]:
-        fig, axs = plt.subplots(2,3) 
-        fig.suptitle(f'DIALS vs Precog HKLS for Frame {i}')
         x = dials_xy[:,0]
         y = dials_xy[:,1]
 #        bot = np.min([aligned_hkls[:,0].min(), aligned_hkls[:,1].min(), aligned_hkls[:,2].min()])
 #        top = np.max([aligned_hkls[:,0].max(), aligned_hkls[:,1].max(), aligned_hkls[:,2].max()])
+        fig, axs = plt.subplots(2,3) 
+        fig.suptitle(f'DIALS vs Precog HKLS for Frame {i}')
         bot = -30
         top = 30
         norm = plt.Normalize(bot, top)
@@ -123,6 +143,32 @@ for i in tqdm(np.arange(elist[0].imageset.size())):
     print(sum(correct)/len(correct))
     percent_correct[i] = sum(correct)/len(correct)
 
+    plt.hist2d(dials_xy[:,0], dials_xy[:,1], bins=100, density=True)
+    plt.title('DIALS XY HIST2D')
+    plt.show()
+    plt.hist2d(precog_xy_filtered[:,0], precog_xy_filtered[:,1], bins=100, density=True)
+    plt.title('PRECOG XY HIST2D')
+    plt.show()
+    x_diff = precog_xy_filtered[:,0] - dials_xy[:,0]
+    y_diff = precog_xy_filtered[:,1] - dials_xy[:,1]
+    plt.hist2d(x_diff, y_diff, bins=20, range=[[-2,2], [-2,2]])
+    plt.title('PRECOG - DIALS XY HIST2D')
+    plt.show()
+    plt.hist2d(x_diff[~correct], y_diff[~correct], bins=20, range=[[-200,200], [-200,200]])
+    plt.title('PRECOG - DIALS XY HIST2D INCORRECT ONLY')
+    plt.show()
+
+    plt.figure()
+    plt.scatter(dials_xy[:,0][~correct], dials_xy[:,1][~correct], c='b', alpha=0.5)
+    plt.scatter(precog_xy_filtered[:,0][~correct], precog_xy_filtered[:,1][~correct], c='r', alpha=0.5)
+    for i in range(len(dials_xy[:,0][~correct])):
+        plt.arrow(dials_xy[:,0][~correct][i], dials_xy[:,1][~correct][i], x_diff[~correct][i], y_diff[~correct][i])
+    plt.xlabel('X (pixels)')
+    plt.ylabel('Y (pixels)')
+    plt.title('DIALS vs Precog Incorrectly Indexed Spot Centroids')
+    plt.legend(title='Blue:DIALS XY (pixels)\nRed:Precognition XY (pixels)\nArrows connect centroids of same spot.')
+    plt.show()
+
     if (i == 2):
         pix_position = dials_xy
         plt.figure()
@@ -132,6 +178,28 @@ for i in tqdm(np.arange(elist[0].imageset.size())):
         plt.legend()
         plt.show()
 
+    # Quiver plot of HKLs normalized to visualize density
+    num_refls = len(dials_hkl[0,:])
+    sphere_radius = 1
+    abc = np.asarray(elist[0].crystal.get_unit_cell().parameters()[0:3]) # Not generalized for all space groups
+    abc_norm = abc/max(abc)
+    uvw = dials_hkl[:,dials_idx].astype(float)
+    uvw[0,:] = uvw[0,:]*abc_norm[0] # Transform from H to Cartesian U
+    uvw[1,:] = uvw[1,:]*abc_norm[1] # Transform from K to Cartesian V
+    uvw[2,:] = uvw[2,:]*abc_norm[2] # Transform from L to Cartesian W
+    uvw = sphere_radius*uvw/np.linalg.norm(uvw, axis=0) # Normalize uvw
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.set_title('Normalized HKL vectors')
+    ax.set_xlim([-sphere_radius,sphere_radius])
+    ax.set_ylim([-sphere_radius,sphere_radius])
+    ax.set_zlim([-sphere_radius,sphere_radius])
+    ax.set_xlabel('normalized H')
+    ax.set_ylabel('normalized K')
+    ax.set_zlabel('normalized L')
+    ax.scatter(uvw[0],uvw[1],uvw[2], marker='.', c=~correct, cmap='bwr')
+    plt.show()
+    
 plt.plot(np.arange(len(percent_correct)), percent_correct)
 plt.xlabel('Image Number')
 plt.ylabel('Fraction of Reflections Indexed Correctly')
