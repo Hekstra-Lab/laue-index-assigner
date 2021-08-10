@@ -48,9 +48,9 @@ dials.index "${FILE_OUTPUT_TEMPLATE}imported_${EXPECTED_WAVELENGTH}.expt" "${FIL
   output.reflections="${FILE_OUTPUT_TEMPLATE}expected_index.refl"
 
 dials.refine "${FILE_OUTPUT_TEMPLATE}expected_index.expt" "${FILE_OUTPUT_TEMPLATE}expected_index.refl" \
-  refinement.parameterisation.goniometer.fix=None \ # Consider fixing entirely as proxy for detector.orientation
+  refinement.parameterisation.goniometer.fix=None `# Consider fixing entirely as proxy for detector.orientation` \
   refinement.parameterisation.beam.fix=all \
-  refinement.parameterisation.detector.fix=orientation \ # Consider fixing Distance
+  refinement.parameterisation.detector.fix=orientation `# Consider fixing Distance` \
   refinement.parameterisation.scan_varying=True \
   refinement.reflections.outlier.algorithm=tukey \
   refinement.reflections.outlier.tukey.iqr_multiplier=$TUKEY_MULTIPLIER \
