@@ -104,8 +104,6 @@ for i in trange(elist[0].imageset.size()):
         idx, 
         flex.double(la._wav.tolist()),
     )
-    if i > 9:
-        break
 
 #This is obviously wrong? why are we doing this?
     #df.loc[['s1_0', 's1_1', 's1_2']] = la._H

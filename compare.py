@@ -50,7 +50,7 @@ percent_outliers = np.zeros(elist[0].imageset.size())
 
 
 # Iterate by frame and match HKLs, seeing what percentage are correct
-for i in tqdm(np.arange(elist[0].imageset.size())):
+for i in trange(elist[0].imageset.size()):
     # Get reflection indices from each batch
     im_pre = precog_df[precog_df['BATCH'] == i]
     im_dia = dials_df[dials_df['BATCH'] == i]
@@ -65,8 +65,11 @@ for i in tqdm(np.arange(elist[0].imageset.size())):
         im_pre[['X', 'Y']].to_numpy(float)[None,:,:],
         axis = -1
     )
-    idx = np.argmin(dmat, axis=1)
-    im_pre = im_pre.iloc[idx]
+
+    # This prevents duplicated matches
+    idx1,idx2 = np.where((dmat == dmat.min(0)) & (dmat == dmat.min(1)[:,None]))
+    im_dia = im_dia.iloc[idx1]
+    im_pre = im_pre.iloc[idx2]
 
     precog_hkl = im_pre[['H', 'K', 'L']].to_numpy(float)
     dials_hkl  = im_dia[['H', 'K', 'L']].to_numpy(float)
@@ -84,14 +87,21 @@ for i in tqdm(np.arange(elist[0].imageset.size())):
         percent_correct[i] = 100.*sum(correct)/len(correct)
 
     if i == 0:
-        plt.plot(*precog_xy.T, 'ko', mfc='none', ms=10, label='Precog')
-        plt.plot( *dials_xy[correct].T, 'k.', label='Dials (correct)')
-        plt.plot(*dials_xy[~correct].T, 'r.', label='Dials (incorrect)')
-        plt.plot(
-            np.column_stack((dials_xy[:,0], precog_xy[:,0])).T,
-            np.column_stack((dials_xy[:,1], precog_xy[:,1])).T,
-            '-k',
-        )
+        filename = elist[0].imageset.get_image_identifier(i)
+        pixels = plt.imread(filename)
+
+        pixels[pixels==0] = 1.
+        plt.matshow(np.log(pixels), cmap='Greys_r')
+
+        plt.plot(*precog_xy.T, 'yo', mfc='none', ms=11, label='Precog')
+        plt.plot( *dials_xy[correct].T, 'ko', mfc='none', ms=9, label='Dials (correct)')
+        plt.plot(*dials_xy[~correct].T, 'ro', mfc='none', ms=9, label='Dials (incorrect)')
+
+        x = np.column_stack((dials_xy[:,0], precog_xy[:,0]))
+        y = np.column_stack((dials_xy[:,1], precog_xy[:,1]))
+        idx = np.linalg.norm(dials_xy - precog_xy, axis=-1) > 5.
+        x,y = x[idx].T,y[idx].T
+        plt.plot(x, y, '-k')
         plt.legend()
         plt.show()
 
