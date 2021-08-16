@@ -41,11 +41,11 @@ def hkl2ray(hkl, wavelength=None):
     reduced_wavelength : array (optional)
         The wavelengths corresponding to reduced_hkl
     """ 
-    gcd = np.gcd.reduce(hkl.astype(int), axis=1)
+    gcd = np.gcd.reduce(hkl.astype(int), axis=-1)
     if wavelength is not None:
-        return hkl/gcd[:,None], wavelength*gcd
+        return hkl/gcd[...,None], wavelength*gcd
     else:
-        return hkl/gcd[:,None]
+        return hkl/gcd[...,None]
 
 def is_ray_equivalent(hkl1, hkl2):
     """
