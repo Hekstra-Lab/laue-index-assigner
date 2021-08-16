@@ -90,11 +90,13 @@ for i in trange(elist[0].imageset.size()):
     la = LaueAssigner(s0, s1, cell, R, lam_min, lam_max, d_min, spacegroup)
 
     la.assign()
-    for _ in range(3):
+    for j in range(3):
         la.update_rotation()
         la.assign()
         la.reject_outliers()
         la.assign()
+    la.reset_inliers()
+    la.assign()
 
     refls['miller_index'].set_selected(
         idx, 

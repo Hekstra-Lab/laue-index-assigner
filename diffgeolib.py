@@ -308,7 +308,7 @@ class LaueAssigner():
     def wav(self):
         return self._wav[self._inliers]
 
-    #<-- We have a whole bunch of setters that operate on the currently inlying set
+    #<-- setters that operate on the currently inlying set
     def set_qpred(self, qpred):
         self._qpred[self._inliers] = qpred
 
@@ -322,7 +322,7 @@ class LaueAssigner():
 
     def set_inliers(self, inliers):
         self._inliers[self._inliers] = inliers
-    #--> We have a whole bunch of setters that operate on the currently inlying set
+    #--> setters that operate on the currently inlying set
 
     def reset_inliers(self):
         self._inliers = np.ones(len(self._inliers), dtype=bool)
@@ -347,8 +347,8 @@ class LaueAssigner():
         Hall = self.Hall
         qall = (self.RB@Hall.T).T
         feasible = (
-            (np.linalg.norm(qall + self.s0/self.lam_min, axis=1) < 1/self.lam_min) & 
-            (np.linalg.norm(qall + self.s0/self.lam_max, axis=1) > 1/self.lam_max)
+            (np.linalg.norm(qall + self.s0/self.lam_min, axis=-1) < 1/self.lam_min) & 
+            (np.linalg.norm(qall + self.s0/self.lam_max, axis=-1) > 1/self.lam_max)
         ) 
         Hall = Hall[feasible]
         qall = qall[feasible]
