@@ -118,7 +118,6 @@ for i in trange(elist[0].imageset.size()):
         x,y = x[idx].T,y[idx].T
         plt.plot(x, y, '-k')
         plt.legend()
-        embed(colors='linux')
         plt.show()
 
 plt.figure()
