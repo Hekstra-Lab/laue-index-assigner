@@ -36,15 +36,15 @@ precog_df.cell = gemmi.UnitCell(*unit_cell.parameters())
 refls = reflection_table.from_file(refl_file)
 
 print('generating DIALS dataframe')
-dials_df = pd.DataFrame(index=np.zeros(len(refls)))
-dials_df['X'] = refls['xyzobs.px.value'].parts()[0].as_numpy_array()
-dials_df['Y'] = refls['xyzobs.px.value'].parts()[1].as_numpy_array()
-dials_df['H'] = refls['miller_index'].as_vec3_double().parts()[0].as_numpy_array()
-dials_df['K'] = refls['miller_index'].as_vec3_double().parts()[1].as_numpy_array()
-dials_df['L'] = refls['miller_index'].as_vec3_double().parts()[2].as_numpy_array()
-dials_df['Wavelength'] = refls['Wavelength'].as_numpy_array()
-#dials_df['BATCH'] = refls['shoebox'].bounding_boxes().parts()[4]
-dials_df['BATCH'] = refls['xyzobs.px.value'].parts()[2].as_numpy_array() - 0.5
+dials_df = rs.DataSet({
+    'X' : refls['xyzobs.px.value'].parts()[0].as_numpy_array(),
+    'Y' : refls['xyzobs.px.value'].parts()[1].as_numpy_array(),
+    'H' : refls['miller_index'].as_vec3_double().parts()[0].as_numpy_array(),
+    'K' : refls['miller_index'].as_vec3_double().parts()[1].as_numpy_array(),
+    'L' : refls['miller_index'].as_vec3_double().parts()[2].as_numpy_array(),
+    'Wavelength' : refls['Wavelength'].as_numpy_array(),
+    'BATCH' : refls['xyzobs.px.value'].parts()[2].as_numpy_array() - 0.5,
+}, cell = precog_df.cell, spacegroup=precog_df.spacegroup).infer_mtz_dtypes()
 
 
 print('initializing metrics')
@@ -53,6 +53,8 @@ percent_outliers = np.zeros(elist[0].imageset.size())
 nspots = np.zeros(elist[0].imageset.size())
 nmatch = np.zeros(elist[0].imageset.size())
 
+
+both_df = None
 
 # Iterate by frame and match HKLs, seeing what percentage are correct
 for i in trange(elist[0].imageset.size()):
@@ -100,6 +102,14 @@ for i in trange(elist[0].imageset.size()):
 
     nmatch[i] = len(im_dia)
 
+    # Add this image to `both_df`
+    im_pre.loc[:,['H', 'K', 'L']] = aligned_hkls
+    im_pre.infer_mtz_dtypes(inplace=True)
+    _both_df = im_dia.reset_index().join(im_pre.reset_index(), rsuffix='_pre', lsuffix='_dia')
+    #_both_df = im_dia.join(im_pre.set_index(['H', 'K', 'L']), on=['H', 'K', 'L'], lsuffix='_dia', rsuffix='_pre')
+    _both_df['correct'] = correct
+    both_df = pd.concat((both_df, _both_df))
+
     if i == 0:
         filename = elist[0].imageset.get_image_identifier(i)
         pixels = plt.imread(filename)
@@ -118,7 +128,6 @@ for i in trange(elist[0].imageset.size()):
         x,y = x[idx].T,y[idx].T
         plt.plot(x, y, '-k')
         plt.legend()
-        plt.show()
 
 plt.figure()
 plt.plot(np.arange(len(percent_correct)), percent_correct, label='Correct Inliers')
@@ -136,5 +145,36 @@ plt.xlabel('Image Number')
 plt.ylabel('Count')
 plt.title('Spots per Image')
 plt.legend()
-plt.show()
+
+plt.figure()
+plt.plot(
+    both_df.loc[both_df.correct, 'Wavelength_pre'].to_numpy(),
+    both_df.loc[both_df.correct, 'Wavelength_dia'].to_numpy(),
+    'k.',
+    alpha=0.1,
+    label='correct',
+)
+plt.plot(
+    both_df.loc[~both_df.correct, 'Wavelength_pre'].to_numpy(),
+    both_df.loc[~both_df.correct, 'Wavelength_dia'].to_numpy(),
+    'r.',
+    label='incorrect',
+)
+plt.xlabel('$\lambda$ (precognition)')
+plt.ylabel('$\lambda$ (DIALS)')
+plt.legend()
+
+plt.figure()
+c1,c2,c3 = "#1b9e77", "#d95f02", "#7570b3"
+alpha = 1.
+cor = both_df.correct
+plt.plot(both_df.loc[~cor, 'H_pre'].to_numpy(), both_df.loc[~cor, 'H_dia'].to_numpy(), '.', color=c1, label='H (incorrect)',  alpha=alpha)
+plt.plot(both_df.loc[~cor, 'K_pre'].to_numpy(), both_df.loc[~cor, 'K_dia'].to_numpy(), '.', color=c2, label='K (incorrect)', alpha=alpha)
+plt.plot(both_df.loc[~cor, 'L_pre'].to_numpy(), both_df.loc[~cor, 'L_dia'].to_numpy(), '.', color=c3, label='L (incorrect)', alpha=alpha)
+plt.xlabel("Precognition")
+plt.ylabel("DIALS")
+plt.legend()
+
+embed()
+
 
