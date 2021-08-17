@@ -330,7 +330,7 @@ class LaueAssigner():
     def reject_outliers(self, nstd=10.):
         """ update the list of inliers """
         from sklearn.covariance import MinCovDet
-        X = np.concatenate((self.qobs, self.qpred), axis=-1)
+        X = np.concatenate((self.qobs, self.qpred * self.wav[:,None]), axis=-1)
         dist = MinCovDet().fit(X).dist_
         self.set_inliers(dist <= nstd**2.)
 
