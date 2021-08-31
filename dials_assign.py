@@ -10,14 +10,14 @@ from dials.array_family import flex
 
 # Hyperparameters for indexer
 lam_min = 0.95
-lam_max = 1.3
+lam_max = 1.15
 d_min = 1.4
 rlp_radius = 0.002
 n_steps = 10
 new_refl_filename = 'optimized.refl'
 
 # Load DIALS files
-expt_file = "dials_temp_files/refined_varying.expt" #<-- Fill this in
+expt_file = "dials_temp_files/expected_index.expt" #<-- Fill this in
 refl_file = "dials_temp_files/strong_1.04.refl" #<-- Fill this in
 
 elist = ExperimentListFactory.from_json_file(expt_file, check_format=False)
@@ -58,26 +58,48 @@ for i in trange(elist[0].imageset.size()):
     gonio_setting_matrix = matrix.sqr(experiment.goniometer.get_setting_rotation())
     gonio_axis = matrix.col(experiment.goniometer.get_rotation_axis())
 
-    #These are sorta defined here: https://dials.github.io/documentation/conventions.html
-    R_mat = gonio_axis.axis_and_angle_as_r3_rotation_matrix(\
-            angle=experiment.scan.get_angle_from_array_index(int(i)) + (step / 2),\
-            deg=True,) * gonio_setting_matrix 
-    B_mat = matrix.sqr(cryst.get_B_at_scan_point(int(i)))
-    U_mat = matrix.sqr(cryst.get_U_at_scan_point(int(i)))
+    if cryst.num_scan_points==0:
+        #These are sorta defined here: https://dials.github.io/documentation/conventions.html
+        R_mat = gonio_axis.axis_and_angle_as_r3_rotation_matrix(\
+                angle=experiment.scan.get_angle_from_array_index(int(i)) + (step / 2),\
+                deg=True,) * gonio_setting_matrix 
+        B_mat = matrix.sqr(cryst.get_B())
+        U_mat = matrix.sqr(cryst.get_U())
 
-    #This is the trustworthy implementation from Aaron's code
-    A_mat = gonio_axis.axis_and_angle_as_r3_rotation_matrix(\
-            angle=experiment.scan.get_angle_from_array_index(int(i)) + (step / 2),\
-            deg=True,) * gonio_setting_matrix * matrix.sqr(cryst.get_A_at_scan_point(int(i)))
+        #This is the trustworthy implementation from Aaron's code
+        A_mat = gonio_axis.axis_and_angle_as_r3_rotation_matrix(\
+                angle=experiment.scan.get_angle_from_array_index(int(i)) + (step / 2),\
+                deg=True,) * gonio_setting_matrix * matrix.sqr(cryst.get_A())
 
-    R = np.array(R_mat).reshape((3, 3)) @ np.array(U_mat).reshape((3, 3))
-    B = np.array(B_mat).reshape((3, 3))
-    RB = R@B
+        R = np.array(R_mat).reshape((3, 3)) @ np.array(U_mat).reshape((3, 3))
+        B = np.array(B_mat).reshape((3, 3))
+        RB = R@B
 
-    RB_true = np.array(A_mat).reshape((3,3))
+        RB_true = np.array(A_mat).reshape((3,3))
 
-    cell_params = cryst.get_unit_cell_at_scan_point(int(i)).parameters()
-    cell = gemmi.UnitCell(*cell_params)
+        cell_params = cryst.get_unit_cell().parameters()
+        cell = gemmi.UnitCell(*cell_params)
+    else:
+        #These are sorta defined here: https://dials.github.io/documentation/conventions.html
+        R_mat = gonio_axis.axis_and_angle_as_r3_rotation_matrix(\
+                angle=experiment.scan.get_angle_from_array_index(int(i)) + (step / 2),\
+                deg=True,) * gonio_setting_matrix 
+        B_mat = matrix.sqr(cryst.get_B_at_scan_point(int(i)))
+        U_mat = matrix.sqr(cryst.get_U_at_scan_point(int(i)))
+
+        #This is the trustworthy implementation from Aaron's code
+        A_mat = gonio_axis.axis_and_angle_as_r3_rotation_matrix(\
+                angle=experiment.scan.get_angle_from_array_index(int(i)) + (step / 2),\
+                deg=True,) * gonio_setting_matrix * matrix.sqr(cryst.get_A_at_scan_point(int(i)))
+
+        R = np.array(R_mat).reshape((3, 3)) @ np.array(U_mat).reshape((3, 3))
+        B = np.array(B_mat).reshape((3, 3))
+        RB = R@B
+
+        RB_true = np.array(A_mat).reshape((3,3))
+
+        cell_params = cryst.get_unit_cell_at_scan_point(int(i)).parameters()
+        cell = gemmi.UnitCell(*cell_params)
     assert np.allclose(RB, RB_true)
 
     # Generate s vectors
@@ -87,10 +109,11 @@ for i in trange(elist[0].imageset.size()):
     #s1 = normalize(detector.pix2lab(xy))
 
     # Generate assigner object
+    R = np.eye(3)
     la = LaueAssigner(s0, s1, cell, R, lam_min, lam_max, d_min, spacegroup)
 
     la.assign()
-    for j in range(3):
+    for j in range(300):
         la.update_rotation()
         la.assign()
         la.reject_outliers()
@@ -106,6 +129,8 @@ for i in trange(elist[0].imageset.size()):
         idx, 
         flex.double(la._wav.tolist()),
     )
+    if i > 0:
+        break
 
 #This is obviously wrong? why are we doing this?
     #df.loc[['s1_0', 's1_1', 's1_2']] = la._H
