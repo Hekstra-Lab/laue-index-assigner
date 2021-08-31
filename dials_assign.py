@@ -9,6 +9,7 @@ from dials.array_family.flex import reflection_table
 from dials.array_family import flex
 
 # Hyperparameters for indexer
+macro_cycles = 3
 lam_min = 0.95
 lam_max = 1.15
 d_min = 1.4
@@ -17,7 +18,7 @@ n_steps = 10
 new_refl_filename = 'optimized.refl'
 
 # Load DIALS files
-expt_file = "dials_temp_files/expected_index.expt" #<-- Fill this in
+expt_file = "dials_temp_files/refined_varying.expt" #<-- Fill this in
 refl_file = "dials_temp_files/strong_1.04.refl" #<-- Fill this in
 
 elist = ExperimentListFactory.from_json_file(expt_file, check_format=False)
@@ -40,7 +41,6 @@ s0 = np.array(elist[0].beam.get_s0())
 
 # Write to reflection file
 refls['Wavelength'] = flex.double(len(refls))
-#refl_output['s1'] = flex.vec3_double(df[['s1_0','s1_1','s1_2']].to_numpy().tolist())
 refls['miller_index'] = flex.miller_index(len(refls))
 
 # Loop over images and index by frame
@@ -105,15 +105,11 @@ for i in trange(elist[0].imageset.size()):
     # Generate s vectors
     s1 = subrefls['s1'].as_numpy_array()
 
-    #xy = subrefls['xyzobs.px.value'].as_numpy_array()[:,:2]
-    #s1 = normalize(detector.pix2lab(xy))
-
     # Generate assigner object
-    R = np.eye(3)
     la = LaueAssigner(s0, s1, cell, R, lam_min, lam_max, d_min, spacegroup)
 
     la.assign()
-    for j in range(300):
+    for j in range(macro_cycles):
         la.update_rotation()
         la.assign()
         la.reject_outliers()
@@ -129,11 +125,6 @@ for i in trange(elist[0].imageset.size()):
         idx, 
         flex.double(la._wav.tolist()),
     )
-    if i > 0:
-        break
-
-#This is obviously wrong? why are we doing this?
-    #df.loc[['s1_0', 's1_1', 's1_2']] = la._H
 
 
 # Write out reflection file
