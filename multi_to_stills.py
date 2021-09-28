@@ -8,7 +8,7 @@ Example:
 
 
 import logging
-import numpy as np
+from IPython import embed
 
 from dxtbx.model import MosaicCrystalSauter2014
 from dxtbx.model.experiment_list import Experiment, ExperimentList
@@ -74,12 +74,10 @@ def sequence_to_stills(experiments, reflections, params):
 #        "xyzobs.px.value",
 #        "xyzobs.px.variance",
 #    ]:
-#        if key in reflections:
-#            new_reflections[key] = type(reflections[key])()
-#        elif key == "imageset_id":
-#            assert len(experiments.imagesets()) == 1
-#            reflections["imageset_id"] = flex.int(len(reflections), 0)
-#            new_reflections["imageset_id"] = flex.int()
+    for key in reflections.keys():
+        new_reflections[key] = type(reflections[key])()
+    reflections["imageset_id"] = flex.int(len(reflections), 0)
+    new_reflections["imageset_id"] = flex.int()
 #        elif key == "entering":
 #            reflections["entering"] = flex.bool(len(reflections), False)
 #            new_reflections["entering"] = flex.bool()
@@ -91,9 +89,6 @@ def sequence_to_stills(experiments, reflections, params):
     imagesets = []
 
     for expt_id, experiment in enumerate(experiments):
-        refls = reflections.select(reflections["id"] == expt_id)
-        _, _, _, _, z1, z2 = refls["bbox"].parts()
-
         # Generate crystals and imagesets for each scan point on first loop
         if(first_loop):
             for i_scan_point in range(*experiment.scan.get_array_range()):
@@ -162,35 +157,29 @@ def sequence_to_stills(experiments, reflections, params):
 
 # ----------------EXPERIMENTS CREATED---------------------------------
 
-#            new_id = len(new_experiments) - 1
-#            subrefls = refls.select((i_scan_point >= z1) & (i_scan_point < z2))
+        for i_scan_point in range(*experiment.scan.get_array_range()):
+            # Get subset of reflections on this image
+            _, _, _, _, z1, z2 = reflections["bbox"].parts()
+            subrefls = reflections.select((i_scan_point >= z1) & (i_scan_point < z2))
+            new_refls = subrefls.copy()
+            new_refls['xyzobs.px.value'] = subrefls['xyzobs.px.value'] - [0.,0.,0.5]
+            new_refls['imageset_id'] = flex.int(new_refls['xyzobs.px.value'].parts()[2].as_numpy_array() - 0.5)
+            new_refls['id'] = flex.int([0]*len(subrefls))
+            new_reflections.extend(new_refls)
+
 #            for refl in subrefls.rows():
-#                assert i_scan_point in range(*refl["bbox"][4:6])
-#
-#                new_sb = Shoebox()
-#                start = i_scan_point - refl["bbox"][4]  # z1
-#                new_sb.data = refl["shoebox"].data[start : start + 1, :, :]
-#                new_sb.background = refl["shoebox"].background[start : start + 1, :, :]
-#                new_sb.mask = refl["shoebox"].mask[start : start + 1, :, :]
-#                intensity = new_sb.summed_intensity()
-#                new_sb.bbox = tuple(
-#                    list(refl["bbox"])[0:4] + [0, 1]
-#                )  # keep the original shoebox but reset the z values
-#                new_sb.panel = refl["panel"]
 #                new_refl = {}
-#                new_refl["id"] = new_refl["imageset_id"] = new_id
-#                new_refl["shoebox"] = new_sb
-#                new_refl["bbox"] = new_sb.bbox
-#                new_refl["intensity.sum.value"] = intensity.observed.value
-#                new_refl["intensity.sum.variance"] = intensity.observed.variance
-#                for key in ["entering", "flags", "miller_index", "panel"]:
+#                for key in refl.keys():
 #                    new_refl[key] = refl[key]
-#                centroid = new_sb.centroid_foreground_minus_background()
-#                new_refl["xyzobs.px.value"] = centroid.px.position
-#                new_refl["xyzobs.px.variance"] = centroid.px.variance
-#                new_reflections.append({})
+#                new_refl["xyzobs.px.value"] = flex.double([refl['xyzobs.px.value'][0], refl['xyzobs.px.value'][1], refl['xyzobs.px.value'][2] - 0.5])
+#                new_refl["imageset_id"] = int(refl['xyzobs.px.value'][2])
+#                new_refl["id"] = 0
+#                new_reflections.append({}) # Need to append a reflection table, not reflection
+#                embed()
 #                for key in new_refl:
-#                    new_reflections[key][-1] = new_refl[key]
+#                    new_reflections[key][-1] = new_refl[key] # Roundabout way to append reflection
+
+# ----------------REFLECTIONS CREATED-------------------------------
 
 # img_id = int(xyz_obs.px.value()[2] - 0.5)
 
