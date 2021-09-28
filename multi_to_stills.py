@@ -152,6 +152,7 @@ def sequence_to_stills(experiments, reflections, params):
         # Split experiment by scan points
         for i_scan_point in range(*experiment.scan.get_array_range()):
             new_experiment = Experiment(
+                identifier = str(len(crystals)*expt_id + i_scan_point),
                 detector=experiment.detector,
                 beam=experiment.beam,
                 crystal=crystals[i_scan_point],
@@ -161,9 +162,6 @@ def sequence_to_stills(experiments, reflections, params):
 
 # ----------------EXPERIMENTS CREATED---------------------------------
 
-            # Each reflection in a 3D shoebox can be found on multiple images.
-            # Slice the reflections such that any reflection on this scan point
-            # is included with this image
 #            new_id = len(new_experiments) - 1
 #            subrefls = refls.select((i_scan_point >= z1) & (i_scan_point < z2))
 #            for refl in subrefls.rows():
@@ -193,6 +191,8 @@ def sequence_to_stills(experiments, reflections, params):
 #                new_reflections.append({})
 #                for key in new_refl:
 #                    new_reflections[key][-1] = new_refl[key]
+
+# img_id = int(xyz_obs.px.value()[2] - 0.5)
 
     return (new_experiments, new_reflections)
 
