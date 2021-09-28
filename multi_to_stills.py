@@ -164,7 +164,7 @@ def sequence_to_stills(experiments, reflections, params):
             new_refls = subrefls.copy()
             new_refls['xyzobs.px.value'] = subrefls['xyzobs.px.value'] - [0.,0.,0.5]
             new_refls['imageset_id'] = flex.int(new_refls['xyzobs.px.value'].parts()[2].as_numpy_array() - 0.5)
-            new_refls['id'] = flex.int([0]*len(subrefls))
+            new_refls['id'] = flex.int(subrefls['id']*len(crystals) + i_scan_point)
             new_reflections.extend(new_refls)
 
 #            for refl in subrefls.rows():
