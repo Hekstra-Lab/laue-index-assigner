@@ -157,27 +157,27 @@ def sequence_to_stills(experiments, reflections, params):
 
 # ----------------EXPERIMENTS CREATED---------------------------------
 
-        for i_scan_point in range(*experiment.scan.get_array_range()):
-            # Get subset of reflections on this image
-            _, _, _, _, z1, z2 = reflections["bbox"].parts()
-            subrefls = reflections.select((i_scan_point >= z1) & (i_scan_point < z2))
-            new_refls = subrefls.copy()
-            new_refls['xyzobs.px.value'] = subrefls['xyzobs.px.value'] - [0.,0.,0.5]
-            new_refls['imageset_id'] = flex.int(new_refls['xyzobs.px.value'].parts()[2].as_numpy_array() - 0.5)
-            new_refls['id'] = flex.int(subrefls['id']*len(crystals) + i_scan_point)
-            new_reflections.extend(new_refls)
+    for i_scan_point in range(len(crystals)):
+        # Get subset of reflections on this image
+        _, _, _, _, z1, z2 = reflections["bbox"].parts()
+        subrefls = reflections.select((i_scan_point >= z1) & (i_scan_point < z2))
+        new_refls = subrefls.copy()
+        new_refls['xyzobs.px.value'] = subrefls['xyzobs.px.value'] - [0.,0.,0.5]
+        new_refls['imageset_id'] = flex.int(new_refls['xyzobs.px.value'].parts()[2].as_numpy_array() - 0.5)
+        new_refls['id'] = flex.int(subrefls['id']*len(crystals) + i_scan_point)
+        new_reflections.extend(new_refls)
 
-#            for refl in subrefls.rows():
-#                new_refl = {}
-#                for key in refl.keys():
-#                    new_refl[key] = refl[key]
-#                new_refl["xyzobs.px.value"] = flex.double([refl['xyzobs.px.value'][0], refl['xyzobs.px.value'][1], refl['xyzobs.px.value'][2] - 0.5])
-#                new_refl["imageset_id"] = int(refl['xyzobs.px.value'][2])
-#                new_refl["id"] = 0
-#                new_reflections.append({}) # Need to append a reflection table, not reflection
-#                embed()
-#                for key in new_refl:
-#                    new_reflections[key][-1] = new_refl[key] # Roundabout way to append reflection
+#        for refl in subrefls.rows():
+#            new_refl = {}
+#            for key in refl.keys():
+#                new_refl[key] = refl[key]
+#            new_refl["xyzobs.px.value"] = flex.double([refl['xyzobs.px.value'][0], refl['xyzobs.px.value'][1], refl['xyzobs.px.value'][2] - 0.5])
+#            new_refl["imageset_id"] = int(refl['xyzobs.px.value'][2])
+#            new_refl["id"] = 0
+#            new_reflections.append({}) # Need to append a reflection table, not reflection
+#            embed()
+#            for key in new_refl:
+#                new_reflections[key][-1] = new_refl[key] # Roundabout way to append reflection
 
 # ----------------REFLECTIONS CREATED-------------------------------
 
