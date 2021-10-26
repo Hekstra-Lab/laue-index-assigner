@@ -163,8 +163,6 @@ def sequence_to_stills(experiments, reflections, params):
         subrefls = reflections.select((i_scan_point >= z1) & (i_scan_point < z2))
         new_refls = subrefls.copy()
         new_refls['xyzobs.px.value'] = subrefls['xyzobs.px.value'] - [0.,0.,0.5]
-        x, y, z = reflections['xyzobs.px.value'].parts()
-        reflections['xyzobs.px.value'] = flex.vec3_double(x, y, z - 0.5)
         new_refls['imageset_id'] = flex.int(new_refls['xyzobs.px.value'].parts()[2].as_numpy_array())
         x, y, _ = reflections['xyzobs.mm.value'].parts()
         reflections['xyzobs.mm.value'] = flex.vec3_double(x, y, flex.double(len(reflections), 0))
