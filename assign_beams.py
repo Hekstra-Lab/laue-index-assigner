@@ -55,9 +55,9 @@ expt_filename = "/n/home04/rahewitt/laue_indexer/laue-index-assigner/dials_temp_
 refl_filename = "/n/home04/rahewitt/laue_indexer/laue-index-assigner/optimized.refl"
 new_expt_filename = "./dials_temp_files/multi.expt"
 new_refl_filename = "./dials_temp_files/multi.refl"
-min_wavelength = 0.7 # Maybe there should be a smart tool that determines these beam params, with optional override
-max_wavelength = 1.5
-n_beams = 81
+min_wavelength = 1.0 # Maybe there should be a smart tool that determines these beam params, with optional override
+max_wavelength = 1.2
+n_beams = 41
 lams = np.linspace(min_wavelength, max_wavelength, num=n_beams)
 lam_step = lams[1]-lams[0]
 
