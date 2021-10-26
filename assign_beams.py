@@ -55,9 +55,9 @@ expt_filename = "/n/home04/rahewitt/laue_indexer/laue-index-assigner/dials_temp_
 refl_filename = "/n/home04/rahewitt/laue_indexer/laue-index-assigner/optimized.refl"
 new_expt_filename = "./dials_temp_files/multi.expt"
 new_refl_filename = "./dials_temp_files/multi.refl"
-min_wavelength = 1.0 # Maybe there should be a smart tool that determines these beam params, with optional override
-max_wavelength = 1.2
-n_beams = 41
+min_wavelength = 0.7 # Maybe there should be a smart tool that determines these beam params, with optional override
+max_wavelength = 1.5
+n_beams = 81
 lams = np.linspace(min_wavelength, max_wavelength, num=n_beams)
 lam_step = lams[1]-lams[0]
 
@@ -85,13 +85,12 @@ dials_df = rs.DataSet({
     'ID' : refl_input['xyzobs.px.value'].parts()[2].as_numpy_array() - 0.5,
 }).infer_mtz_dtypes()
 
+
 # Bin data frame IDs by closest beam wavelength
 bins = np.asarray(np.append(lams - lam_step/2, lams[-1]+lam_step/2)) # This leaves out everything above/below a lam_step of the max/min beams, should we exclude large/small wavelengths, throw a warning, or simply add those reflections to their closest beams?
 labels = np.arange(len(lams))
 dials_df['new_ID'] = pd.cut(dials_df['Wavelength'], bins=bins, labels=labels)
 dials_df['new_ID'][dials_df['Wavelength'] < bins[0]] = 0
-if(np.sum(pd.to_numeric(dials_df['new_ID'])) != 0):
-    print("Warning: Wavelengths outside of range detected. Pairing them with closest matching beams.")
 dials_df['new_ID'][dials_df['Wavelength'] > bins[-1]] = labels[-1]
 dials_df['new_ID'] = pd.to_numeric(dials_df['new_ID'])
 
