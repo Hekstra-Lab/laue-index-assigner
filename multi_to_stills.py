@@ -14,6 +14,7 @@ from dxtbx.model import MosaicCrystalSauter2014
 from dxtbx.model.experiment_list import Experiment, ExperimentList
 from libtbx.phil import parse
 from scitbx import matrix
+from tqdm import trange
 
 from dials.algorithms.refinement.prediction.managed_predictors import (
     ExperimentsPredictorFactory,
@@ -157,7 +158,7 @@ def sequence_to_stills(experiments, reflections, params):
 
 # ----------------EXPERIMENTS CREATED---------------------------------
 
-    for i_scan_point in range(len(crystals)):
+    for i_scan_point in trange(len(crystals)):
         # Get subset of reflections on this image
         _, _, _, _, z1, z2 = reflections["bbox"].parts()
         subrefls = reflections.select((i_scan_point >= z1) & (i_scan_point < z2))
