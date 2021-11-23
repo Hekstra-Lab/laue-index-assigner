@@ -15,7 +15,7 @@ lam_max = 1.15
 d_min = 1.4
 rlp_radius = 0.002
 n_steps = 10
-new_refl_filename = 'optimized.refl'
+new_refl_filename = 'dials_temp_files/optimized.refl'
 
 # Load DIALS files
 expt_file = "dials_temp_files/refined_varying.expt" #<-- Fill this in

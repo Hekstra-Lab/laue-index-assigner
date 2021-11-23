@@ -51,8 +51,8 @@ def decrement_expt_ids(exptList, index):
     return new_expt_list
 
 # Set parameters
-expt_filename = "/n/home04/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/refined_varying.expt"
-refl_filename = "/n/home04/rahewitt/laue_indexer/laue-index-assigner/optimized.refl"
+expt_filename = "./dials_temp_files/refined_varying.expt"
+refl_filename = "./dials_temp_files/optimized.refl"
 new_expt_filename = "./dials_temp_files/multi.expt"
 new_refl_filename = "./dials_temp_files/multi.refl"
 min_wavelength = 1.0 # Maybe there should be a smart tool that determines these beam params, with optional override

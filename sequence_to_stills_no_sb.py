@@ -29,10 +29,10 @@ logger = logging.getLogger("dials.command_line.sequence_to_stills")
 phil_scope = parse(
     """
 output {
-  experiments = test.expt
+  experiments = ./dials_temp_files/stills_no_sb.expt
     .type = str
     .help = "Filename for the experimental models that have been converted to stills"
-  reflections = test.refl
+  reflections = ./dials_temp_files/stills_no_sb.refl
     .type = str
     .help = "Filename for the reflection tables with split shoeboxes (3D to 2D)"
   domain_size_ang = None

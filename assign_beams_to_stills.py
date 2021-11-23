@@ -52,10 +52,10 @@ def decrement_expt_ids(exptList, index):
     return new_expt_list
 
 # Set parameters
-expt_filename = "/n/home04/rahewitt/laue_indexer/laue-index-assigner/test.expt"
-refl_filename = "/n/home04/rahewitt/laue_indexer/laue-index-assigner/test.refl"
-new_expt_filename = "test_multi.expt"
-new_refl_filename = "test_multi.refl"
+expt_filename = "./dials_temp_files/stills_no_sb.expt"
+refl_filename = "./dials_temp_files/stills_no_sb.refl"
+new_expt_filename = "./dials_temp_files/stills_no_sb_multi.expt"
+new_refl_filename = "./dials_temp_files/stills_no_sb_multi.refl"
 
 # Get experiments
 expts = ExperimentListFactory.from_json_file(expt_filename)
