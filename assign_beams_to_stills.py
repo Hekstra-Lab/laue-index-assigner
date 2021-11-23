@@ -2,7 +2,7 @@ from dials.array_family import flex
 from dxtbx.model.experiment_list import ExperimentListFactory
 from dxtbx.model import ExperimentList
 from copy import deepcopy
-from tqdm import tqdm
+from tqdm import tqdm, trange
 import numpy as np
 import pandas as pd
 import reciprocalspaceship as rs
@@ -14,7 +14,7 @@ def filter_experiments(exptList, refl_table):
     new_expt_list = deepcopy(exptList) # Check that this method doesn't copy reference but value
     new_refl_table = refl_table.copy() # Same here
     expts_to_remove = []
-    for i in range(len(new_expt_list)):
+    for i in trange(len(new_expt_list)):
         idx = np.asarray(refl_output["id"] == i)
         # Remove the experiment and decrement experiment IDs of all subsequent experiments
         # Also adjust reflections' assignments to experiments accordingly
@@ -74,6 +74,7 @@ dials_df = rs.DataSet({
 }).infer_mtz_dtypes()
 
 # Generate beams per reflection
+print(f'Number of rows: {len(dials_df)}')
 for i, refl in tqdm(dials_df.iterrows()):
     # New beam per reflection
     expt = expts[int(refl['ID'])]
