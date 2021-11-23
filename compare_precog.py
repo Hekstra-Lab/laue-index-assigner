@@ -110,24 +110,25 @@ for i in trange(elist[0].imageset.size()):
     _both_df['correct'] = correct
     both_df = pd.concat((both_df, _both_df))
 
-    if i == 0:
-        filename = elist[0].imageset.get_image_identifier(i)
-        pixels = plt.imread(filename)
-
-        pixels[pixels==0] = 1.
-        plt.matshow(np.log(pixels), cmap='Greys_r')
-
-        plt.plot(*precog_xy.T, 'yo', mfc='none', ms=11, label='Precog')
-        plt.plot( *dials_xy[correct].T, 'ko', mfc='none', ms=9, label='Dials (correct)')
-        plt.plot(*dials_xy[~correct].T, 'ro', mfc='none', ms=9, label='Dials (incorrect)')
-        plt.plot(*xy_outliers.T, 'bo', mfc='none', ms=9, label='Dials (outliers)')
-
-        x = np.column_stack((dials_xy[:,0], precog_xy[:,0]))
-        y = np.column_stack((dials_xy[:,1], precog_xy[:,1]))
-        idx = np.linalg.norm(dials_xy - precog_xy, axis=-1) > 5.
-        x,y = x[idx].T,y[idx].T
-        plt.plot(x, y, '-k')
-        plt.legend()
+#    if i == 0:
+#        filename = elist[0].imageset.get_image_identifier(i)
+#        pixels = plt.imread(filename)
+#
+#        pixels[pixels==0] = 1.
+#        plt.matshow(np.log(pixels), cmap='Greys_r')
+#
+#        plt.plot(*precog_xy.T, 'yo', mfc='none', ms=11, label='Precog')
+#        plt.plot( *dials_xy[correct].T, 'ko', mfc='none', ms=9, label='Dials (correct)')
+#        plt.plot(*dials_xy[~correct].T, 'ro', mfc='none', ms=9, label='Dials (incorrect)')
+#        plt.plot(*xy_outliers.T, 'bo', mfc='none', ms=9, label='Dials (outliers)')
+#
+#        x = np.column_stack((dials_xy[:,0], precog_xy[:,0]))
+#        y = np.column_stack((dials_xy[:,1], precog_xy[:,1]))
+#        idx = np.linalg.norm(dials_xy - precog_xy, axis=-1) > 5.
+#        x,y = x[idx].T,y[idx].T
+#        plt.plot(x, y, '-k')
+#        plt.legend()
+#        plt.show()
 
 plt.figure()
 plt.plot(np.arange(len(percent_correct)), percent_correct, label='Correct Inliers')
@@ -136,6 +137,7 @@ plt.xlabel('Image Number')
 plt.ylabel('Percent')
 plt.title('Fraction Reflections Correctly Indexed by Image')
 plt.legend()
+plt.show()
 
 
 plt.figure()
@@ -145,6 +147,7 @@ plt.xlabel('Image Number')
 plt.ylabel('Count')
 plt.title('Spots per Image')
 plt.legend()
+plt.show()
 
 plt.figure()
 plt.plot(
@@ -163,6 +166,7 @@ plt.plot(
 plt.xlabel('$\lambda$ (precognition)')
 plt.ylabel('$\lambda$ (DIALS)')
 plt.legend()
+plt.show()
 
 plt.figure()
 c1,c2,c3 = "#1b9e77", "#d95f02", "#7570b3"
@@ -174,7 +178,6 @@ plt.plot(both_df.loc[~cor, 'L_pre'].to_numpy(), both_df.loc[~cor, 'L_dia'].to_nu
 plt.xlabel("Precognition")
 plt.ylabel("DIALS")
 plt.legend()
-
-embed()
+plt.show()
 
 
