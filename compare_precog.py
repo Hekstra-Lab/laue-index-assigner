@@ -11,16 +11,19 @@ import gemmi
 import pandas as pd
 
 #expt_file = "/home/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/updated.expt"
-expt_file = "/home/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/refined_varying.expt"
+expt_file = "dials_temp_files/refined_varying.expt"
 #expt_file = "/home/rahewitt/Downloads/peak_refined.expt"
 refl_file = "optimized.refl"
+
+#centroid distance cutoff in pixels
+centroid_max_distance = 10.
 
 #ds = rs.read_precognition(ii_file).reset_index()
 print('parsing precog files')
 precog_df = parse_ii_inp_file_pairs(
     sorted(glob('data/e080_???.mccd.ii')),
     sorted(glob('data/e080_???.mccd.inp')),
-    ).reset_index()
+).reset_index()
 
 print('reading DIALS files')
 from dxtbx.model.experiment_list import ExperimentListFactory
@@ -33,176 +36,148 @@ precog_df.cell = gemmi.UnitCell(*unit_cell.parameters())
 refls = reflection_table.from_file(refl_file)
 
 print('generating DIALS dataframe')
-dials_df = pd.DataFrame(index=np.zeros(len(refls)))
-dials_df['X'] = refls['xyzobs.px.value'].parts()[0].as_numpy_array()
-dials_df['Y'] = refls['xyzobs.px.value'].parts()[1].as_numpy_array()
-dials_df['H'] = refls['miller_index'].parts()[0].as_numpy_array()
-dials_df['K'] = refls['miller_index'].parts()[1].as_numpy_array()
-dials_df['L'] = refls['miller_index'].parts()[2].as_numpy_array()
-dials_df['Wavelength'] = refls['Wavelength'].as_numpy_array()
-#dials_df['BATCH'] = refls['shoebox'].bounding_boxes().parts()[4]
-dials_df['BATCH'] = refls['xyzobs.px.value'].parts()[2].as_numpy_array() - 0.5
+dials_df = rs.DataSet({
+    'X' : refls['xyzobs.px.value'].parts()[0].as_numpy_array(),
+    'Y' : refls['xyzobs.px.value'].parts()[1].as_numpy_array(),
+    'H' : refls['miller_index'].as_vec3_double().parts()[0].as_numpy_array(),
+    'K' : refls['miller_index'].as_vec3_double().parts()[1].as_numpy_array(),
+    'L' : refls['miller_index'].as_vec3_double().parts()[2].as_numpy_array(),
+    'Wavelength' : refls['Wavelength'].as_numpy_array(),
+    'BATCH' : refls['xyzobs.px.value'].parts()[2].as_numpy_array() - 0.5,
+}, cell = precog_df.cell, spacegroup=precog_df.spacegroup).infer_mtz_dtypes()
 
-print('getting HKL matrices')
-dials_hkl = dials_df[['H','K','L']].to_numpy().astype(int).T
-precog_hkl = precog_df[['H','K','L']].to_numpy().astype(int).T
 
 print('initializing metrics')
 percent_correct = np.zeros(elist[0].imageset.size())
+percent_outliers = np.zeros(elist[0].imageset.size())
+nspots = np.zeros(elist[0].imageset.size())
+nmatch = np.zeros(elist[0].imageset.size())
 
-# Quiver plot of HKLs normalized to visualize density
-num_refls = len(dials_hkl[0,:])
-sphere_radius = 1
-abc = np.asarray(elist[0].crystal.get_unit_cell().parameters()[0:3]) # Not generalized for all space groups
-abc_norm = abc/max(abc)
-uvw = dials_hkl.astype(float)
-uvw[0,:] = uvw[0,:]*abc_norm[0] # Transform from H to Cartesian U
-uvw[1,:] = uvw[1,:]*abc_norm[1] # Transform from K to Cartesian V
-uvw[2,:] = uvw[2,:]*abc_norm[2] # Transform from L to Cartesian W
-uvw = sphere_radius*uvw/np.linalg.norm(uvw, axis=0) # Normalize uvw
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-ax.set_title('Normalized HKL vectors')
-ax.set_xlim([-sphere_radius,sphere_radius])
-ax.set_ylim([-sphere_radius,sphere_radius])
-ax.set_zlim([-sphere_radius,sphere_radius])
-ax.set_xlabel('normalized H')
-ax.set_ylabel('normalized K')
-ax.set_zlabel('normalized L')
-ax.scatter(uvw[0],uvw[1],uvw[2], marker='.')
-plt.show()
+
+both_df = None
 
 # Iterate by frame and match HKLs, seeing what percentage are correct
-for i in tqdm(np.arange(elist[0].imageset.size())):
+for i in trange(elist[0].imageset.size()):
     # Get reflection indices from each batch
-    precog_idx = (precog_df['BATCH'] == i).astype(bool)
-    dials_idx = (dials_df['BATCH'] == i).astype(bool)
+    im_pre = precog_df[precog_df['BATCH'] == i]
+    im_dia = dials_df[dials_df['BATCH'] == i]
+    nspots[i] = len(im_dia)
+
+    #Removing the unindexed refls
+    outliers = np.all(im_dia[['H', 'K', 'L']] == 0., axis=1)
+    percent_outliers[i] = 100.*outliers.sum() / len(outliers)
+    xy_outliers = im_dia.loc[outliers, ['X', 'Y']].to_numpy(float)
+    im_dia = im_dia[~outliers]
+    if len(im_dia) == 0:
+        continue
+
+    dmat = np.linalg.norm(
+        im_dia[['X', 'Y']].to_numpy(float)[:,None,:] - \
+        im_pre[['X', 'Y']].to_numpy(float)[None,:,:],
+        axis = -1
+    )
+
+    # This prevents duplicated matches
+    idx1,idx2 = np.where((dmat == dmat.min(0)) & (dmat == dmat.min(1)[:,None]) & (dmat <= centroid_max_distance))
+    im_dia = im_dia.iloc[idx1]
+    im_pre = im_pre.iloc[idx2]
+
+    if len(im_dia) == 0:
+        continue
+
+    precog_hkl = im_pre[['H', 'K', 'L']].to_numpy(float)
+    dials_hkl  = im_dia[['H', 'K', 'L']].to_numpy(float)
 
     # Get XY positions for refls
-    dials_xy = dials_df[['X', 'Y']].to_numpy().astype(float)[dials_idx]
-    precog_xy = precog_df[['X', 'Y']].to_numpy().astype(float)[precog_idx]
-    precog_xy_filtered = np.zeros(dials_xy.shape)
-    # Filter out extraneous precog refls
-    precog_filter = np.full(len(precog_xy), np.inf)
-    for j in np.arange(len(dials_xy)):                                                  
-        precog_filter[j] = np.argmin(np.linalg.norm(dials_xy[j,:] - precog_xy, axis=-1))
-    precog_img_hkl = np.zeros((3,len(dials_hkl[:, dials_idx].T)))
-    for j in np.arange(len(dials_xy[:, 0])):                                              
-        precog_img_hkl[:,j] = precog_hkl.T[precog_idx, :][precog_filter[j].astype(int), :]
-        precog_xy_filtered[j,:] = precog_xy[precog_filter[j].astype(int)]
+    precog_xy = im_pre[['X', 'Y']].to_numpy(float)
+    dials_xy  = im_dia[['X', 'Y']].to_numpy(float)
 
     # Align precog to DIALS hkls
-    aligned_hkls = align_hkls(dials_hkl[:, dials_idx].T, precog_img_hkl.T, precog_df.spacegroup)
-
-    if i in [0, 100, 178]:
-        x = dials_xy[:,0]
-        y = dials_xy[:,1]
-#        bot = np.min([aligned_hkls[:,0].min(), aligned_hkls[:,1].min(), aligned_hkls[:,2].min()])
-#        top = np.max([aligned_hkls[:,0].max(), aligned_hkls[:,1].max(), aligned_hkls[:,2].max()])
-        fig, axs = plt.subplots(2,3) 
-        fig.suptitle(f'DIALS vs Precog HKLS for Frame {i}')
-        bot = -30
-        top = 30
-        norm = plt.Normalize(bot, top)
-        cmap = plt.get_cmap('viridis')
-        sm = plt.cm.ScalarMappable(norm,cmap)
-        fig.colorbar(sm, ax=axs.ravel().tolist()).set_label('Miller Index Scale')
-
-        z = dials_hkl[0, dials_idx]
-        axs[0,0].scatter(x, y, c=z, cmap=cmap, norm=norm, alpha=0.3)
-        z = dials_hkl[1, dials_idx]
-        axs[0,1].scatter(x, y, c=z, cmap=cmap, norm=norm, alpha=0.3)
-        z = dials_hkl[2, dials_idx]
-        axs[0,2].scatter(x, y, c=z, cmap=cmap, norm=norm, alpha=0.3)
-        z = aligned_hkls[:,0]
-        axs[1,0].scatter(x, y, c=z, cmap=cmap, norm=norm, alpha=0.3)
-        z = aligned_hkls[:,1]
-        axs[1,1].scatter(x, y, c=z, cmap=cmap, norm=norm, alpha=0.3)
-        z = aligned_hkls[:,2]
-        axs[1,2].scatter(x, y, c=z, cmap=cmap, norm=norm, alpha=0.3)
-
-        for m, row in enumerate(axs):
-            for j, cell in enumerate(row):
-                if m==0:
-                    cell.set_ylabel('DIALS')
-                else:
-                    cell.set_ylabel('Precognition')
-                if j==0:
-                    cell.set_xlabel('H')
-                if j==1:
-                    cell.set_xlabel('K')
-                if j==2:
-                    cell.set_xlabel('L')
-        for ax in axs.flat:
-            ax.label_outer()
-        plt.show()
-
+    aligned_hkls = align_hkls(dials_hkl, precog_hkl, precog_df.spacegroup)
 
     # Check correctness of matching
-    correct = is_ray_equivalent(aligned_hkls, dials_hkl[:,dials_idx].T)
-    print(sum(correct)/len(correct))
-    percent_correct[i] = sum(correct)/len(correct)
+    correct = is_ray_equivalent(aligned_hkls, dials_hkl)
+    if len(correct) > 0:
+        percent_correct[i] = 100.*sum(correct)/len(correct)
 
-    plt.hist2d(dials_xy[:,0], dials_xy[:,1], bins=100, density=True)
-    plt.title('DIALS XY HIST2D')
-    plt.show()
-    plt.hist2d(precog_xy_filtered[:,0], precog_xy_filtered[:,1], bins=100, density=True)
-    plt.title('PRECOG XY HIST2D')
-    plt.show()
-    x_diff = precog_xy_filtered[:,0] - dials_xy[:,0]
-    y_diff = precog_xy_filtered[:,1] - dials_xy[:,1]
-    plt.hist2d(x_diff, y_diff, bins=20, range=[[-2,2], [-2,2]])
-    plt.title('PRECOG - DIALS XY HIST2D')
-    plt.show()
-    plt.hist2d(x_diff[~correct], y_diff[~correct], bins=20, range=[[-200,200], [-200,200]])
-    plt.title('PRECOG - DIALS XY HIST2D INCORRECT ONLY')
-    plt.show()
+    nmatch[i] = len(im_dia)
 
-    plt.figure()
-    plt.scatter(dials_xy[:,0][~correct], dials_xy[:,1][~correct], c='b', alpha=0.5)
-    plt.scatter(precog_xy_filtered[:,0][~correct], precog_xy_filtered[:,1][~correct], c='r', alpha=0.5)
-    for i in range(len(dials_xy[:,0][~correct])):
-        plt.arrow(dials_xy[:,0][~correct][i], dials_xy[:,1][~correct][i], x_diff[~correct][i], y_diff[~correct][i])
-    plt.xlabel('X (pixels)')
-    plt.ylabel('Y (pixels)')
-    plt.title('DIALS vs Precog Incorrectly Indexed Spot Centroids')
-    plt.legend(title='Blue:DIALS XY (pixels)\nRed:Precognition XY (pixels)\nArrows connect centroids of same spot.')
-    plt.show()
+    # Add this image to `both_df`
+    im_pre.loc[:,['H', 'K', 'L']] = aligned_hkls
+    im_pre.infer_mtz_dtypes(inplace=True)
+    _both_df = im_dia.reset_index().join(im_pre.reset_index(), rsuffix='_pre', lsuffix='_dia')
+    #_both_df = im_dia.join(im_pre.set_index(['H', 'K', 'L']), on=['H', 'K', 'L'], lsuffix='_dia', rsuffix='_pre')
+    _both_df['correct'] = correct
+    both_df = pd.concat((both_df, _both_df))
 
-    if (i == 2):
-        pix_position = dials_xy
-        plt.figure()
-        plt.title("Millers After Optimization")
-        plt.plot(pix_position[correct,0], pix_position[correct,1], 'k.', label='Correct')
-        plt.plot(pix_position[~correct,0], pix_position[~correct,1], 'r.', label='Incorrect')
-        plt.legend()
-        plt.show()
+#    if i == 0:
+#        filename = elist[0].imageset.get_image_identifier(i)
+#        pixels = plt.imread(filename)
+#
+#        pixels[pixels==0] = 1.
+#        plt.matshow(np.log(pixels), cmap='Greys_r')
+#
+#        plt.plot(*precog_xy.T, 'yo', mfc='none', ms=11, label='Precog')
+#        plt.plot( *dials_xy[correct].T, 'ko', mfc='none', ms=9, label='Dials (correct)')
+#        plt.plot(*dials_xy[~correct].T, 'ro', mfc='none', ms=9, label='Dials (incorrect)')
+#        plt.plot(*xy_outliers.T, 'bo', mfc='none', ms=9, label='Dials (outliers)')
+#
+#        x = np.column_stack((dials_xy[:,0], precog_xy[:,0]))
+#        y = np.column_stack((dials_xy[:,1], precog_xy[:,1]))
+#        idx = np.linalg.norm(dials_xy - precog_xy, axis=-1) > 5.
+#        x,y = x[idx].T,y[idx].T
+#        plt.plot(x, y, '-k')
+#        plt.legend()
+#        plt.show()
 
-    # Quiver plot of HKLs normalized to visualize density
-    num_refls = len(dials_hkl[0,:])
-    sphere_radius = 1
-    abc = np.asarray(elist[0].crystal.get_unit_cell().parameters()[0:3]) # Not generalized for all space groups
-    abc_norm = abc/max(abc)
-    uvw = dials_hkl[:,dials_idx].astype(float)
-    uvw[0,:] = uvw[0,:]*abc_norm[0] # Transform from H to Cartesian U
-    uvw[1,:] = uvw[1,:]*abc_norm[1] # Transform from K to Cartesian V
-    uvw[2,:] = uvw[2,:]*abc_norm[2] # Transform from L to Cartesian W
-    uvw = sphere_radius*uvw/np.linalg.norm(uvw, axis=0) # Normalize uvw
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.set_title('Normalized HKL vectors')
-    ax.set_xlim([-sphere_radius,sphere_radius])
-    ax.set_ylim([-sphere_radius,sphere_radius])
-    ax.set_zlim([-sphere_radius,sphere_radius])
-    ax.set_xlabel('normalized H')
-    ax.set_ylabel('normalized K')
-    ax.set_zlabel('normalized L')
-    ax.scatter(uvw[0],uvw[1],uvw[2], marker='.', c=~correct, cmap='bwr')
-    plt.show()
-    
-plt.plot(np.arange(len(percent_correct)), percent_correct)
+plt.figure()
+plt.plot(np.arange(len(percent_correct)), percent_correct, label='Correct Inliers')
+plt.plot(np.arange(len(percent_correct)), percent_outliers, label='Outliers')
 plt.xlabel('Image Number')
-plt.ylabel('Fraction of Reflections Indexed Correctly')
+plt.ylabel('Percent')
 plt.title('Fraction Reflections Correctly Indexed by Image')
+plt.legend()
 plt.show()
+
+
+plt.figure()
+plt.plot(np.arange(len(nspots)), nspots, label='Strong Spots')
+plt.plot(np.arange(len(nmatch)), nmatch, label='Matched to Precog')
+plt.xlabel('Image Number')
+plt.ylabel('Count')
+plt.title('Spots per Image')
+plt.legend()
+plt.show()
+
+plt.figure()
+plt.plot(
+    both_df.loc[both_df.correct, 'Wavelength_pre'].to_numpy(),
+    both_df.loc[both_df.correct, 'Wavelength_dia'].to_numpy(),
+    'k.',
+    alpha=0.1,
+    label='correct',
+)
+plt.plot(
+    both_df.loc[~both_df.correct, 'Wavelength_pre'].to_numpy(),
+    both_df.loc[~both_df.correct, 'Wavelength_dia'].to_numpy(),
+    'r.',
+    label='incorrect',
+)
+plt.xlabel('$\lambda$ (precognition)')
+plt.ylabel('$\lambda$ (DIALS)')
+plt.legend()
+plt.show()
+
+plt.figure()
+c1,c2,c3 = "#1b9e77", "#d95f02", "#7570b3"
+alpha = 1.
+cor = both_df.correct
+plt.plot(both_df.loc[~cor, 'H_pre'].to_numpy(), both_df.loc[~cor, 'H_dia'].to_numpy(), '.', color=c1, label='H (incorrect)',  alpha=alpha)
+plt.plot(both_df.loc[~cor, 'K_pre'].to_numpy(), both_df.loc[~cor, 'K_dia'].to_numpy(), '.', color=c2, label='K (incorrect)', alpha=alpha)
+plt.plot(both_df.loc[~cor, 'L_pre'].to_numpy(), both_df.loc[~cor, 'L_dia'].to_numpy(), '.', color=c3, label='L (incorrect)', alpha=alpha)
+plt.xlabel("Precognition")
+plt.ylabel("DIALS")
+plt.legend()
+plt.show()
+
 

@@ -8,6 +8,20 @@ from IPython import embed
 This is just a place to stash useful functions and classes for diffraction geometry calculations
 """
 
+def indexing_rotation_tril(A):
+    """
+    Takes an indexing matrix (A) and returns a factorization, R@B = A 
+    wherein B is lower triangular and R is a rotation matrix.
+    """
+    q,r = np.linalg.qr(A[::-1,::-1])
+    return q[::-1,::-1]
+
+def normalize(A):
+    """
+    Normalize the last dimension of an array by dividing by its L2 norm
+    """
+    return A / np.linalg.norm(A, axis=-1)[...,None]
+
 def hkl2ray(hkl, wavelength=None):
     """ 
     Convert a miller index to the shortest member of its central ray. 
@@ -27,11 +41,11 @@ def hkl2ray(hkl, wavelength=None):
     reduced_wavelength : array (optional)
         The wavelengths corresponding to reduced_hkl
     """ 
-    gcd = np.gcd.reduce(hkl.astype(int), axis=1)
+    gcd = np.gcd.reduce(hkl.astype(int), axis=-1)
     if wavelength is not None:
-        return hkl/gcd[:,None], wavelength*gcd
+        return hkl/gcd[...,None], wavelength*gcd
     else:
-        return hkl/gcd[:,None]
+        return hkl/gcd[...,None]
 
 def is_ray_equivalent(hkl1, hkl2):
     """
@@ -138,14 +152,14 @@ class Detector():
         """ Map 3d coordinates in the lab frame in mm to pixels """
         if D is None:
             D = self.D
-        Dinv = np.linalg.inv(D.double()).float()
+        Dinv = np.linalg.inv(D)
         return (xyz@Dinv)[:,:2]
 
     def s12pix(self, s1, D=None):
         """ Project a scattered beam wavevector into pixel coordinates. """
         if D is None:
             D = self.D
-        Dinv = np.linalg.inv(D.double()).float()
+        Dinv = np.linalg.inv(D)
         xya = s1@Dinv
         xy = xya[:,:2]/xya[:,2,None]
         return xy
@@ -201,170 +215,172 @@ def rot_xyz_to_mat(rot_x, rot_y, rot_z, deg=True):
         [-sy, cy*sx, cx*cy],
     ], device=rot_x.device)
 
+
+
+
 class LaueAssigner():
     """
-    This class can be used to assign miller indices to Laue data with 
-    poor initial geometry.
+    An object to assign miller indices to a laue still. 
     """
-    def __init__(self, s0, s1_obs, lam_min, lam_max, hmax, RB):
+    def __init__(self, s0, s1, cell, R, lam_min, lam_max, dmin, spacegroup='1'):
         """
         Parameters
         ----------
         s0 : array
-            The (potentially unnormalized) direction of the incoming beam wavevector.
-        s1_obs : array
-            The `n x 3` array of observed scattered beam wavevector directions. These will
-            be normalized. 
+            a 3 vector indicating the direction of the incoming beam wavevector.
+            This can be any length, it will be unit normalized in the constructor.
+        s1 : array
+            n x 3 array indicating the direction of the scatterd beam wavevector.
+            This can be any length, it will be unit normalized in the constructor.
+        cell : iterable or gemmi.UnitCell
+            A tuple or list of unit cell params (a, b, c, alpha, beta, gamma) or a gemmi.UnitCell object
+        R : array
+            A 3x3 rotation matrix corresponding to the crystal orientation for the frame.
         lam_min : float
             The lower end of the wavelength range of the beam.
         lam_max : float
             The upper end of the wavelength range of the beam.
-        hmax : array
-            A vector [hmax, kmax, lmax] specifying the largest miller indices to be 
-            considered along each of the reciprocal basis vectors. 
-        RB : array
-            The approximate indexing solution. This matrix is called Astar some places, 
-            but it contains the reciprocal basis vectors as its *rows*. 
-            ```python
-            RB = np.array([
-                [astar_1, astar_2, astar_3], 
-                [bstar_1, bstar_2, bstar_3], 
-                [cstar_1, cstar_2, cstar_3], 
-            ])
-            ```
-            It is equal to an orthogonal matrix `R` times the matrix `B` which is related
-            to the orthogonalization matrix, `O`, by
-            ```python
-            B = np.linalg.inv(O).T
-            ```
+        dmin : float
+            The maximum resolution of the model
+        spacegroup : gemmi.SpaceGroup (optional)
+            Anything that the gemmi.SpaceGroup constructor understands.
         """
-        self.s0 = np.array(s0) / np.linalg.norm(s0)
-        self.lam_min,self.lam_max = lam_min,lam_max
-        self.hmax = hmax
-        self.s1_obs = np.array(s1_obs) / np.linalg.norm(s1_obs, axis=1)[:,None]
-        self.H = None
-        self.RB = np.array(RB)
+        if not isinstance(cell, gemmi.UnitCell):
+            cell = gemmi.UnitCell(*cell)
+        self.cell = cell
+
+        if not isinstance(spacegroup, gemmi.SpaceGroup):
+            spacegroup = gemmi.SpaceGroup(spacegroup)
+        self.spacegroup = spacegroup
+
+        self.R = R
+        self.lam_min = lam_min
+        self.lam_max = lam_max
+        self.dmin = dmin
+        self.B = np.array(self.cell.fractionalization_matrix).T
         self.ewald_offset = None
-        self.wavelengths = None
-        self.assign()
+
+        # self.s{0,1} are dynamically masked by their outlier status
+        self.s0 = s0 / np.linalg.norm(s0)
+        self._s1 = s1 / np.linalg.norm(s1, axis=-1)[:,None]
+        self._qobs = self._s1 - self.s0
+        self._qpred = np.zeros_like(self._s1)
+        self._H = np.zeros_like(self._s1)
+        self._wav = np.zeros(len(self._H))
+        self._inliers = np.ones(len(self._s1), dtype=bool)
+
+        #Initialize the full reciprocal grid
+        hmax,kmax,lmax = self.cell.get_hkl_limits(dmin)
+        Hall = np.mgrid[
+            -hmax:hmax+1:1.,
+            -kmax:kmax+1:1.,
+            -lmax:lmax+1:1.,
+        ].reshape((3, -1)).T
+        Hall = Hall[np.any(Hall != 0, axis=1)]
+        d = cell.calculate_d_array(Hall)
+        Hall = Hall[d >= dmin]
+
+        #Just remove any systematic absences in the space group
+        Hall = Hall[~rs.utils.is_absent(Hall, self.spacegroup)]
+        self.Hall = Hall
+
+    @property
+    def RB(self):
+        return self.R@self.B
+
+    @property
+    def s1(self):
+        return self._s1[self._inliers]
+
+    @property
+    def qobs(self):
+        return self._qobs[self._inliers]
+
+    @property
+    def qpred(self):
+        return self._qpred[self._inliers]
+
+    @property
+    def H(self):
+        return self._H[self._inliers]
+
+    @property
+    def wav(self):
+        return self._wav[self._inliers]
+
+    #<-- setters that operate on the currently inlying set
+    def set_qpred(self, qpred):
+        self._qpred[self._inliers] = qpred
+
+    def set_H(self, H):
+        self._H[self._inliers]  = H
+        self._H[~self._inliers] = 0.
+
+    def set_wav(self, wav):
+        self._wav[self._inliers]  = wav
+        self._wav[~self._inliers] = 0.
+
+    def set_inliers(self, inliers):
+        self._inliers[self._inliers] = inliers
+    #--> setters that operate on the currently inlying set
+
+    def reset_inliers(self):
+        self._inliers = np.ones(len(self._inliers), dtype=bool)
+
+    def reject_outliers(self, nstd=10.):
+        """ update the list of inliers """
+        from sklearn.covariance import MinCovDet
+        X = np.concatenate((self.qobs, self.qpred * self.wav[:,None]), axis=-1)
+        dist = MinCovDet().fit(X).dist_
+        self.set_inliers(dist <= nstd**2.)
 
     def assign(self):
+        """ 
+        Assign miller indices to the inlier reflections 
+
+        This method will update: 
+            self.H     -- miller indices
+            self.wav   -- wavelengths
+            self.qpred -- predicted scattering vector
         """
-        This function updates H with the current best miller indices by searching the entire
-        set of feasible reflections specified by self.lam_min, self.lam_max, self.hmax, and the 
-        current value of self.RB. It also updates self.ewald_offset which is used to weight 
-        the optimization objective. It will also set self.L to the current most probable
-        wavelengths.
-
-        Returns
-        -------
-        self : LaueAssigner
-            This method returns self to enable chaining.
-        """
-        s0 = self.s0
-        s1 = self.s1_obs
-        Q = (s1 - s0)
-        RB = self.RB
-        lam_min,lam_max = self.lam_min,self.lam_max
-
-        # This block generates the entire reciprocal grid and then removes infeasible reflections
-        # TODO: to save memory, write a cython version of this using a triply nested for-loop 
-        # which never instantiates the infeasible reflecitons
-        hmax,kmax,lmax = self.hmax
-        Hall = np.mgrid[
-            -hmax:hmax+1:1,
-            -kmax:kmax+1:1,
-            -lmax:lmax+1:1,
-        ].reshape((3, -1)).T
-        Hall = Hall[np.any(Hall!=0, axis=1)] #<-- remove 0,0,0
-        Hall = Hall[((Hall / self.hmax)**2.).sum(-1) <= 1.]
-
-        Qpred = (RB@Hall.T).T
+        #Generate the feasible set of reflections from the current geometry
+        Hall = self.Hall
+        qall = (self.RB@Hall.T).T
         feasible = (
-            (np.linalg.norm(Qpred + s0/lam_min, axis=1) < 1/lam_min) & 
-            (np.linalg.norm(Qpred + s0/lam_max, axis=1) > 1/lam_max)
+            (np.linalg.norm(qall + self.s0/self.lam_min, axis=-1) < 1/self.lam_min) & 
+            (np.linalg.norm(qall + self.s0/self.lam_max, axis=-1) > 1/self.lam_max)
         ) 
-        Qpred = Qpred[feasible]
-        lpred = - 2. * (Qpred@(s0)) * np.linalg.norm(Qpred, axis=1)**-2.
-        Qlpred = Qpred*lpred[:,None]
+        Hall = Hall[feasible]
+        qall = qall[feasible]
 
-        # This block matches the predicted scattering vectors to the observed ones
-        # TODO: add some checks for redundant assignments. 
-        distmat = np.linalg.norm(Q[:,None,:] - Qlpred[None,:,:], axis=-1)
-        idx = np.argmin(distmat, axis=1)
-        H_best = Hall[feasible][idx]
-        self.ewald_offset = np.linalg.norm(Qlpred[idx] - Q, axis=1)
-        self.H = H_best
-        self.wavelengths = lpred[idx]
-        return self
+        #Remove harmonics from the feasible set
+        Raypred = hkl2ray(Hall)
+        _,idx   = np.unique(Raypred, return_index=True, axis=0)
+        Hall = Hall[idx]
+        qall = qall[idx]
 
-    def optimize_bases(self, rlp_radius=0.002, steps=10):
-        """
-        Use convex optimization to improve the quality of the indexing matrix, self.RB.
-        This method solves a weighted L1 norm mnimization problem 
+        wav_all  = -2.*(self.s0 * qall).sum(-1) / (qall*qall).sum(-1)
 
-        ```python
-        minimize ||w*(k*Qpred.T - RB@H.T)||_1
-             st.  1./lam_max <= k <= 1./lam_min
-        ```
-        Where the weights, w, are
-        ```python
-        w = np.exp(-0.5*(ewald_offset/rlp_radius)**2.)
-        w /= w.mean()
-        ```
-        After optimizing the bases, this method will call `self.assign` to update 
-        `self.H` to be consistent with the new bases. 
+        dmat = rs.utils.angle_between(self.qobs[...,None,:], qall[None,...,:])
+        cost = dmat
 
-        Parameters
-        ----------
-        rlp_radius : float (optional)
-            An approximate value for the radius of the reciprocal lattice points in 
-            inverse angstroms. This is used for weighting the objective function.
-            A suitable default is `0.002`.
-        steps : int (optional)
-            The number of cycles of convex optimization to run. The default is 10 which 
-            seems sufficient. 
+        from scipy.optimize import linear_sum_assignment
+        _,idx = linear_sum_assignment(cost)
+        H   = Hall[idx]
+        qpred = qall[idx]
+        wav = wav_all[idx]
 
-        Returns
-        -------
-        self : LaueAssigner
-            This method returns self to enable chaining.
-        """
-        import cvxpy as cvx
-        s0 = self.s0
-        s1 = self.s1_obs
-        Q = (s1 - s0)
-        lam_min,lam_max = self.lam_min,self.lam_max
+        # Set all attributes to match the current assignment
+        self.set_H(H)
+        self.set_wav(wav)
+        self.set_qpred(qpred)
 
-        hkl_pred,r = self.H, self.ewald_offset
-
-        k = cvx.Variable(len(self.s1_obs))
-        RB = cvx.Variable((3,3))
-        cons = [
-            k >= 1./lam_max,
-            k <= 1./lam_min,
-        ]
-
-        losses = []
-        correct = []
-
-        for i in range(steps):
-            w = np.exp(-0.5*(r/rlp_radius)**2.)
-            w /= w.mean()
-            Qpred = RB@hkl_pred.T
-            Ql = cvx.multiply(Q, k[:,None]).T
-            resid = Qpred - Ql
-            loss = cvx.norm1(cvx.multiply(w[None,:], resid)) 
-            p = cvx.Problem(
-                cvx.Minimize(loss),
-                cons,
-            )
-            p.solve(solver='ECOS', verbose=False, max_iters=1000)
-            r = np.linalg.norm(Ql.value - Qpred.value, axis=0)
-            hkl_pred = (np.linalg.inv(RB.value)@Ql.value).T
-            hkl_pred = np.round(hkl_pred)
-            #TODO: implement early termination by checking loss.value for convergence
-
-        self.RB = RB.value
-        self.assign()
+    def update_rotation(self):
+        """ Update the rotation matrix (self.R) based on the inlying refls """
+        from scipy.linalg import orthogonal_procrustes
+        misset,_ = orthogonal_procrustes(
+            self.qobs, 
+            self.qpred * self.wav[:,None],
+        )
+        self.R = misset@self.R
 

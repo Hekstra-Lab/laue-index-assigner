@@ -1,0 +1,23 @@
+Hi, here are the instructions for the current pipeline:
+
+First run config.sh to set environment variables, and run setpaths.sh for your DIALS installation.
+
+Then decide whether to use dials_temp_files/pixels.mask or better_mask.mask for your analysis.
+
+Then you can run the following scripts in this order:
+
+scan_varying_indexer.sh
+dials_assign.py
+assign_beams.py
+multi_to_stills.py
+
+Please run all Python files with cctbx.python. At this point you can try refinement -- end of working pipeline right now.
+
+A quick rundown of the temporary DIALS files by name and in order of generation by above scripts:
+
+strong_1.04.refl  <-- Strong spots at lambda=1.04 angstroms
+expected_index.* <-- Output of initial monochromatic dials.index at 1.04 angstroms
+refined_varying.* <-- Output of scan-varying monochromatic refinement
+optimized.refl <-- Output of Kevin's optimization code for Miller indices
+multi.* <-- Output of script that generates multiple beam models for every image
+multi_stills.* <-- Output that generates stills from multi.*; similar to dials.sequence_to_stills()
