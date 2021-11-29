@@ -46,7 +46,7 @@ for i in trange(elist[0].imageset.size()):
     subrefls = refls.select(idx)
 
     # Get crystal orientation
-    A_mat = cryst.get_A()
+    A_mat = np.asarray(cryst.get_A()).reshape(3,3)
     cell_params = cryst.get_unit_cell().parameters()
     cell = gemmi.UnitCell(*cell_params)
 
