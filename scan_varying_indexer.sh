@@ -24,7 +24,7 @@ dials.import geometry.scan.oscillation=0,$OSCILLATION \
 dials.find_spots "${FILE_OUTPUT_TEMPLATE}imported_${EXPECTED_WAVELENGTH}.expt" \
         nproc=12 \
         spotfinder.lookup.mask="${REL_PATH}/dials_temp_files/pixels.mask" \
-        spotfinder.threshold.dispersion.gain=1.47 \
+        spotfinder.threshold.dispersion.gain=0.10 \
         spotfinder.force_2d=True \
         output.shoeboxes=False \
         output.reflections="${FILE_OUTPUT_TEMPLATE}strong.refl" \
