@@ -24,19 +24,19 @@ refl_output["id"] = flex.int([-1]*len(refl_output))
 
 # Initialize data frame
 dials_df = rs.DataSet({
-    'Wavelength' : expts[0].beam.get_wavelength(),
-    'ID' : refl_input['xyzobs.px.value'].parts()[2].as_numpy_array() - 0.5,
+    'Wavelength' : refl_input['Wavelength'],
+    'ID' : refl_input['id'],
     'new_ID' : [-1]*len(refl_input)
-}).infer_mtz_dtypes()
-
+})#.infer_mtz_dtypes()
+ 
 # Generate beams per reflection
 print(f'Number of rows: {len(dials_df)}')
 for i, refl in tqdm(dials_df.iterrows()):
     # New beam per reflection
-    expt = expts[int(refl['ID'])]
+    expt = expts[refl['ID'][i]]
     new_expt = expt
     new_expt.beam = deepcopy(expt.beam)
-    new_expt.beam.set_wavelength(refl['Wavelength'])
+    new_expt.beam.set_wavelength(refl['Wavelength'][i])
     new_expt.identifier = str(i)
     new_expts.append(new_expt)
 
