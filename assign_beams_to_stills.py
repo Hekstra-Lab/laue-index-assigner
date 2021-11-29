@@ -7,50 +7,6 @@ import numpy as np
 import pandas as pd
 import reciprocalspaceship as rs
 
-# TODO: Check these filter functions for correctness -- these were grabbed from another file
-
-def filter_experiments(exptList, refl_table):
-    'Filters the list of experiments to remove those with no assigned reflections'
-    new_expt_list = deepcopy(exptList) # Check that this method doesn't copy reference but value
-    new_refl_table = refl_table.copy() # Same here
-    expts_to_remove = []
-    for i in trange(len(new_expt_list)):
-        idx = np.asarray(refl_output["id"] == i)
-        # Remove the experiment and decrement experiment IDs of all subsequent experiments
-        # Also adjust reflections' assignments to experiments accordingly
-        if(idx.sum() == 0):
-            expts_to_remove.append(i)
-            new_refl_table = decrement_refl_ids(new_refl_table, i)
-    # Remove the empty experiments here
-    new_expt_list = remove_expts(new_expt_list, expts_to_remove)
-    return new_expt_list, new_refl_table
-
-def decrement_refl_ids(refl_table, index):
-    new_refl_table = refl_table.copy()
-    to_be_decremented = refl_table["id"] >= index
-    for i in range(len(new_refl_table)):
-        if(to_be_decremented[i]):
-            new_refl_table["id"][i] = new_refl_table["id"][i] - 1
-    return new_refl_table
-
-def remove_expts(exptList, expts_to_remove):
-    new_expt_list = ExperimentList()
-    num_removed = 0
-    for i in range(len(exptList)):
-        if(i not in expts_to_remove):
-            exptList[i].identifier = str(int(exptList[i].identifier) - num_removed)
-            new_expt_list.append(exptList[i])
-        else:
-            num_removed = num_removed + 1
-    return new_expt_list
-
-def decrement_expt_ids(exptList, index):
-    'Decrements the identifier for every experiment at index to the end of the experiment list'
-    new_expt_list = Copy.copy(exptList)
-    for i in range(index, len(exptList)):
-        new_expt_list[i].identifier = str(int(new_expt_list[i].identifier)-1)
-    return new_expt_list
-
 # Set parameters
 expt_filename = "./dials_temp_files/stills_no_sb.expt"
 refl_filename = "./dials_temp_files/stills_no_sb.refl"
@@ -103,13 +59,6 @@ print('assigned IDs')
 #hkl_predictor = AssignIndicesLocal(nearest_neighbours=8)
 ##hkl_predictor = AssignIndicesGlobal(tolerance=0.1)
 #hkl_predictor(refl_output, new_expts)
-
-# Filter out any experiments with no reflections TODO: MAKE SURE THIS STILL WORKS FOR SURE
-print('filtering')
-new_expts, refl_output = filter_experiments(new_expts, refl_output)
-if len(new_expts) == 0:
-    print("Error: All experiments have no reflections.")
-print('filtered')
 
 print('writing experiments')
 # Write experiment file with multiple beams
