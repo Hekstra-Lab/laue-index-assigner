@@ -5,7 +5,7 @@ First run config.sh to set environment variables, and run setpaths.sh for your D
 PIPELINE 2 ORDER:
 
 scan_varying_indexer.sh
-sequence_to_stills_no_sb.py
+sequence_to_stills_no_sb.py dials_temp_files/refined_varying.*
 dials_assign.py
 assign_beams_to_stills.py
 
@@ -18,4 +18,4 @@ expected_index.* <-- Output of initial monochromatic dials.index at 1.04 angstro
 refined_varying.* <-- Output of scan-varying monochromatic refinement
 optimized.* <-- Output of Kevin's optimization code for Miller indices
 stills_no_sb.* <-- Output of script that generates stills without using shoeboxes before assigning beams
-stills_no_sb_multi.* <-- Output that generates beams for stills_no_sb.* - one beam per reflection
+multi.* <-- Output that generates beams for stills_no_sb.* - one beam per reflection

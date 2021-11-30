@@ -8,10 +8,10 @@ import pandas as pd
 import reciprocalspaceship as rs
 
 # Set parameters
-expt_filename = "./dials_temp_files/stills_no_sb.expt"
-refl_filename = "./dials_temp_files/stills_no_sb.refl"
-new_expt_filename = "./dials_temp_files/stills_no_sb_multi.expt"
-new_refl_filename = "./dials_temp_files/stills_no_sb_multi.refl"
+expt_filename = "./dials_temp_files/optimized.expt"
+refl_filename = "./dials_temp_files/optimized.refl"
+new_expt_filename = "./dials_temp_files/multi.expt"
+new_refl_filename = "./dials_temp_files/multi.refl"
 
 # Get experiments
 expts = ExperimentListFactory.from_json_file(expt_filename)
