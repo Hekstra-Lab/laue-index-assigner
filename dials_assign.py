@@ -1,12 +1,13 @@
 from diffgeolib import *
 from scitbx import matrix
-from IPython import embed
 from tqdm import tqdm,trange
 import numpy as np
 import pandas as pd
 from dxtbx.model.experiment_list import ExperimentListFactory
 from dials.array_family.flex import reflection_table
 from dials.array_family import flex
+from cctbx.sgtbx import space_group
+from cctbx.uctbx import unit_cell
 
 # Hyperparameters for indexer
 macro_cycles = 3
@@ -72,6 +73,13 @@ for i in trange(len(elist.imagesets())):
     # Recalculate s1 based on new wavelengths
     s1 = la.s1 / la.wav[:,None]
 
+    # Reset crystal parameters based on new geometry
+    cryst.set_U(la.R.flatten())
+    cryst.set_A(la.RB.flatten())
+    cryst.set_B(la.B.flatten())
+    cryst.set_space_group(space_group(la.spacegroup.hall))
+    cryst.set_unit_cell(unit_cell(la.cell.parameters))
+
     # Write data to reflections
     refls['s1'].set_selected(
         idx,
@@ -85,6 +93,9 @@ for i in trange(len(elist.imagesets())):
         idx, 
         flex.double(la._wav.tolist()),
     )
+
+# Write out experiment file
+elist.as_file(new_expt_filename)
 
 # Write out reflection file
 refls.as_file(new_refl_filename)
