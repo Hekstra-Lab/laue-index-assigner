@@ -59,6 +59,7 @@ for i in trange(len(elist.imagesets())):
     # Generate assigner object
     la = LaueAssigner(s0, s1, cell, U, lam_min, lam_max, d_min, spacegroup)
 
+    # Optimize Miller indices
     la.assign()
     for j in range(macro_cycles):
         la.update_rotation()
@@ -68,6 +69,14 @@ for i in trange(len(elist.imagesets())):
     la.reset_inliers()
     la.assign()
 
+    # Recalculate s1 based on new wavelengths
+    s1 = la.s1 / la.wav[:,None]
+
+    # Write data to reflections
+    refls['s1'].set_selected(
+        idx,
+        flex.vec3_double(s1)
+    )
     refls['miller_index'].set_selected(
         idx, 
         flex.miller_index(la._H.astype('int').tolist()),
