@@ -36,25 +36,28 @@ refls['Wavelength'] = flex.double(len(refls))
 refls['miller_index'] = flex.miller_index(len(refls))
 
 # Loop over images and index by frame
-for i in trange(elist[0].imageset.size()):
+for i in trange(len(elist.imagesets())):
     # Get experiment data from experiment objects
     experiment = elist[i]
-    cryst = elist.crystals()[0]
+    cryst = experiment.crystal
     spacegroup = gemmi.SpaceGroup(cryst.get_space_group().type().universal_hermann_mauguin_symbol())
 
-    idx = refls['xyzobs.px.value'].parts()[2] - 0.5 == i
+    # Get reflections on this image
+    idx = refls['id'] == i
     subrefls = refls.select(idx)
 
-    # Get crystal orientation
-    A_mat = np.asarray(cryst.get_A()).reshape(3,3)
+    # Get unit cell params
     cell_params = cryst.get_unit_cell().parameters()
     cell = gemmi.UnitCell(*cell_params)
 
     # Generate s vectors
     s1 = subrefls['s1'].as_numpy_array()
 
+    # Get U matrix
+    U = np.asarray(cryst.get_U()).reshape(3,3)
+
     # Generate assigner object
-    la = LaueAssigner(s0, s1, cell, A_mat, lam_min, lam_max, d_min, spacegroup)
+    la = LaueAssigner(s0, s1, cell, U, lam_min, lam_max, d_min, spacegroup)
 
     la.assign()
     for j in range(macro_cycles):
@@ -73,7 +76,6 @@ for i in trange(elist[0].imageset.size()):
         idx, 
         flex.double(la._wav.tolist()),
     )
-
 
 # Write out reflection file
 refls.as_file(new_refl_filename)
