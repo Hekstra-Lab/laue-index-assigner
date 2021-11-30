@@ -34,9 +34,12 @@ print(f'Number of rows: {len(dials_df)}')
 for i, refl in tqdm(dials_df.iterrows()):
     # New beam per reflection
     expt = expts[refl['ID'][i]]
+    temp = expt.beam.get_s0()
     new_expt = expt
     new_expt.beam = deepcopy(expt.beam)
     new_expt.beam.set_wavelength(refl['Wavelength'][i])
+    s0 = (expt.beam.get_s0() / np.linalg.norm(expt.beam.get_s0())) / new_expt.beam.get_wavelength()
+    new_expt.beam.set_s0(s0)
     new_expt.identifier = str(i)
     new_expts.append(new_expt)
 
@@ -48,17 +51,6 @@ print('finished loop')
 idx = flex.int(dials_df['new_ID'])
 refl_output["id"] = idx
 print('assigned IDs')
-
-# Write new wavelength-dependent data (should we do this or keep optimized values?)
-#for i in np.arange(len(refl_output)): # Normalize each s1, divide by appropriate wavelength
-#    s1 = refl_output["s1"][i]
-#    s1 /= np.linalg.norm(s1)
-#    s1 = s1/new_expts[refl_output["id"][i]].beam.get_wavelength()
-#    refl_output["s1"][i] = s1
-#refl_output.map_centroids_to_reciprocal_space(new_expts)
-#hkl_predictor = AssignIndicesLocal(nearest_neighbours=8)
-##hkl_predictor = AssignIndicesGlobal(tolerance=0.1)
-#hkl_predictor(refl_output, new_expts)
 
 print('writing experiments')
 # Write experiment file with multiple beams
