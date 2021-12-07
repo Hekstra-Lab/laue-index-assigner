@@ -6,12 +6,20 @@ from tqdm import tqdm, trange
 import numpy as np
 import pandas as pd
 import reciprocalspaceship as rs
+import argparse
+
+# Get I/O options from user
+parser = argparse.ArgumentParser()
+parser.add_argument('in_expt', help='Input experiment file.')
+parser.add_argument('in_refl', help='Input reflection file.')
+parser.add_argument('output', help='Template for output file. {output}.expt, {output}.refl will be produced.')
+args = parser.parse_args()
 
 # Set parameters
-expt_filename = "./dials_temp_files/optimized.expt"
-refl_filename = "./dials_temp_files/optimized.refl"
-new_expt_filename = "./dials_temp_files/multi.expt"
-new_refl_filename = "./dials_temp_files/multi.refl"
+expt_filename = args.in_expt
+refl_filename = args.in_refl
+new_expt_filename = args.output + '.expt'
+new_refl_filename = args.output + '.refl'
 
 # Get experiments
 expts = ExperimentListFactory.from_json_file(expt_filename)
@@ -51,6 +59,10 @@ print('finished loop')
 idx = flex.int(dials_df['new_ID'])
 refl_output["id"] = idx
 print('assigned IDs')
+
+print('repredicting spots')
+
+print('finished prediction')
 
 print('writing experiments')
 # Write experiment file with multiple beams
