@@ -1,12 +1,12 @@
-FILE_INPUT_TEMPLATE="/n/home04/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/multi_expts/"
-FILE_OUTPUT_TEMPLATE="/n/home04/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/refined_expts/"
+FILE_INPUT_TEMPLATE="/n/home04/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/"
+FILE_OUTPUT_TEMPLATE="/n/home04/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/"
 TUKEY_MULTIPLIER=0.
 # 1 unit cell axis is fixed in precognition (b-axis) (maybe tolerance for detector distance -- look into this)
 # det. dist./wavelength/unit cell axes (fix 2/3)
 # tentatively fix wavelength + b-axis
 # turn this into stills before refinement
 
-dials.refine  ${FILE_INPUT_TEMPLATE}${1} ${FILE_INPUT_TEMPLATE}${2} \
+dials.refine -v -v  ${FILE_INPUT_TEMPLATE}${1} ${FILE_INPUT_TEMPLATE}${2} \
   refinement.reflections.weighting_strategy.override='stills' \
   refinement.parameterisation.beam.fix="*in_spindle_plane *out_spindle_plane" \
   refinement.parameterisation.detector.fix='distance' \
@@ -23,7 +23,7 @@ dials.refine  ${FILE_INPUT_TEMPLATE}${1} ${FILE_INPUT_TEMPLATE}${2} \
 #  refinement.parameterisation.beam.fix=all \
 
 #  refinement.reflections.outlier.algorithm='null' \
-#  refinement.parameterisation.beam.constraints.parameter='Mu2' \
 #  refinement.reflections.outlier.algorithm='tukey' \
 #  refinement.reflections.outlier.tukey.iqr_multiplier=0. \
+#  refinement.parameterisation.beam.constraints.parameter='Mu2' \
 
