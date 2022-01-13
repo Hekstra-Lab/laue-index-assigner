@@ -27,3 +27,4 @@ dials.refine -v -v  ${FILE_INPUT_TEMPLATE}${1} ${FILE_INPUT_TEMPLATE}${2} \
 #  refinement.reflections.outlier.tukey.iqr_multiplier=0. \
 #  refinement.parameterisation.beam.constraints.parameter='Mu2' \
 
+cctbx.python store_wavelengths.py

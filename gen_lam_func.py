@@ -7,7 +7,6 @@ from dxtbx.model.experiment_list import ExperimentListFactory
 from dials.array_family.flex import reflection_table
 from dials.array_family import flex
 from matplotlib import pyplot as plt
-from IPython import embed
 
 # Load files
 expt_file = "dials_temp_files/ultra_refined.expt"
@@ -20,13 +19,11 @@ refls.map_centroids_to_reciprocal_space(elist)
 rlps = refls['rlp'].as_numpy_array()
 normed_rlps = rlps / np.linalg.norm(rlps, axis=1)[:, None]
 
-# Get absolute angle between rlp and beam vector
+# Get angle between rlp and beam vector
 z = elist[0].beam.get_unit_s0()
 thetas = rs.utils.math.angle_between(rlps, z) # in radians
 
 # Get wavelength of rlp
-# TODO: Check if these wavelengths still correspond to their beam wavelengths after refinement
-# ANSWER: They don't --- fix this
 lams = refls['Wavelength'].as_numpy_array()
 
 # Plot data
