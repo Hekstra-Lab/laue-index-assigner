@@ -10,10 +10,8 @@ import reciprocalspaceship as rs
 import gemmi
 import pandas as pd
 
-#expt_file = "/home/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/updated.expt"
-expt_file = "dials_temp_files/refined_varying.expt"
-#expt_file = "/home/rahewitt/Downloads/peak_refined.expt"
-refl_file = "optimized.refl"
+expt_file = "dials_temp_files/optimized.expt"
+refl_file = "dials_temp_files/optimized.refl"
 
 #centroid distance cutoff in pixels
 centroid_max_distance = 10.
@@ -43,21 +41,22 @@ dials_df = rs.DataSet({
     'K' : refls['miller_index'].as_vec3_double().parts()[1].as_numpy_array(),
     'L' : refls['miller_index'].as_vec3_double().parts()[2].as_numpy_array(),
     'Wavelength' : refls['Wavelength'].as_numpy_array(),
-    'BATCH' : refls['xyzobs.px.value'].parts()[2].as_numpy_array() - 0.5,
+    'BATCH' : refls['imageset_id'].as_numpy_array(),
 }, cell = precog_df.cell, spacegroup=precog_df.spacegroup).infer_mtz_dtypes()
 
 
 print('initializing metrics')
-percent_correct = np.zeros(elist[0].imageset.size())
-percent_outliers = np.zeros(elist[0].imageset.size())
-nspots = np.zeros(elist[0].imageset.size())
-nmatch = np.zeros(elist[0].imageset.size())
+percent_correct = np.zeros(len(elist))
+percent_outliers = np.zeros(len(elist))
+percent_misindexed = np.zeros(len(elist))
+nspots = np.zeros(len(elist))
+nmatch = np.zeros(len(elist))
 
 
 both_df = None
 
 # Iterate by frame and match HKLs, seeing what percentage are correct
-for i in trange(elist[0].imageset.size()):
+for i in trange(len(elist)):
     # Get reflection indices from each batch
     im_pre = precog_df[precog_df['BATCH'] == i]
     im_dia = dials_df[dials_df['BATCH'] == i]
@@ -98,6 +97,7 @@ for i in trange(elist[0].imageset.size()):
     # Check correctness of matching
     correct = is_ray_equivalent(aligned_hkls, dials_hkl)
     if len(correct) > 0:
+        percent_misindexed[i] = 100.*sum(~correct)/len(correct)
         percent_correct[i] = 100.*sum(correct)/len(correct)
 
     nmatch[i] = len(im_dia)
@@ -110,44 +110,51 @@ for i in trange(elist[0].imageset.size()):
     _both_df['correct'] = correct
     both_df = pd.concat((both_df, _both_df))
 
-#    if i == 0:
-#        filename = elist[0].imageset.get_image_identifier(i)
-#        pixels = plt.imread(filename)
-#
-#        pixels[pixels==0] = 1.
-#        plt.matshow(np.log(pixels), cmap='Greys_r')
-#
-#        plt.plot(*precog_xy.T, 'yo', mfc='none', ms=11, label='Precog')
-#        plt.plot( *dials_xy[correct].T, 'ko', mfc='none', ms=9, label='Dials (correct)')
-#        plt.plot(*dials_xy[~correct].T, 'ro', mfc='none', ms=9, label='Dials (incorrect)')
-#        plt.plot(*xy_outliers.T, 'bo', mfc='none', ms=9, label='Dials (outliers)')
-#
-#        x = np.column_stack((dials_xy[:,0], precog_xy[:,0]))
-#        y = np.column_stack((dials_xy[:,1], precog_xy[:,1]))
-#        idx = np.linalg.norm(dials_xy - precog_xy, axis=-1) > 5.
-#        x,y = x[idx].T,y[idx].T
-#        plt.plot(x, y, '-k')
-#        plt.legend()
-#        plt.show()
+    if i == 0:
+        x_diff = precog_xy[:,0] - dials_xy[:,0]
+        y_diff = precog_xy[:,1] - dials_xy[:,1]
+        
+        plt.figure()
+        plt.scatter(dials_xy[:,0][correct], dials_xy[:,1][correct], c='b', alpha=1, label='Correct')
+        plt.scatter(dials_xy[:,0][~correct], dials_xy[:,1][~correct], c='r', alpha=1, label='Incorrect')
+        plt.xlabel('X (pixels)')
+        plt.ylabel('Y (pixels)')
+        plt.title('DIALS vs Precog Spot Centroids (Single Image)')
+        plt.legend()
+        plt.show()
+
+        plt.figure()
+        plt.plot(
+            _both_df.loc[_both_df.correct, 'Wavelength_pre'].to_numpy(),
+            _both_df.loc[_both_df.correct, 'Wavelength_dia'].to_numpy(),
+            'k.',
+            alpha=0.5,
+        )
+        plt.xlabel('$\lambda$ (Precognition)')
+        plt.ylabel('$\lambda$ (DIALS)')
+        plt.show()
 
 plt.figure()
-plt.plot(np.arange(len(percent_correct)), percent_correct, label='Correct Inliers')
-plt.plot(np.arange(len(percent_correct)), percent_outliers, label='Outliers')
+plt.plot(np.arange(len(percent_correct)), percent_correct)
 plt.xlabel('Image Number')
 plt.ylabel('Percent')
 plt.title('Fraction Reflections Correctly Indexed by Image')
-plt.legend()
 plt.show()
-
 
 plt.figure()
-plt.plot(np.arange(len(nspots)), nspots, label='Strong Spots')
-plt.plot(np.arange(len(nmatch)), nmatch, label='Matched to Precog')
+plt.plot(np.arange(len(percent_correct)), percent_misindexed)
 plt.xlabel('Image Number')
-plt.ylabel('Count')
-plt.title('Spots per Image')
-plt.legend()
+plt.ylabel('Percent')
+plt.title('Fraction Reflections Misindexed by Image')
 plt.show()
+#plt.figure()
+#plt.plot(np.arange(len(nspots)), nspots, label='Strong Spots')
+#plt.plot(np.arange(len(nmatch)), nmatch, label='Matched to Precog')
+#plt.xlabel('Image Number')
+#plt.ylabel('Count')
+#plt.title('Spots per Image')
+#plt.legend()
+#plt.show()
 
 plt.figure()
 plt.plot(
@@ -155,29 +162,26 @@ plt.plot(
     both_df.loc[both_df.correct, 'Wavelength_dia'].to_numpy(),
     'k.',
     alpha=0.1,
-    label='correct',
 )
-plt.plot(
-    both_df.loc[~both_df.correct, 'Wavelength_pre'].to_numpy(),
-    both_df.loc[~both_df.correct, 'Wavelength_dia'].to_numpy(),
-    'r.',
-    label='incorrect',
-)
-plt.xlabel('$\lambda$ (precognition)')
+plt.xlabel('$\lambda$ (Precognition)')
 plt.ylabel('$\lambda$ (DIALS)')
-plt.legend()
 plt.show()
 
 plt.figure()
 c1,c2,c3 = "#1b9e77", "#d95f02", "#7570b3"
-alpha = 1.
+alpha = 0.1
 cor = both_df.correct
-plt.plot(both_df.loc[~cor, 'H_pre'].to_numpy(), both_df.loc[~cor, 'H_dia'].to_numpy(), '.', color=c1, label='H (incorrect)',  alpha=alpha)
-plt.plot(both_df.loc[~cor, 'K_pre'].to_numpy(), both_df.loc[~cor, 'K_dia'].to_numpy(), '.', color=c2, label='K (incorrect)', alpha=alpha)
-plt.plot(both_df.loc[~cor, 'L_pre'].to_numpy(), both_df.loc[~cor, 'L_dia'].to_numpy(), '.', color=c3, label='L (incorrect)', alpha=alpha)
+plt.plot(both_df.loc[cor, 'H_pre'].to_numpy(), both_df.loc[cor, 'H_dia'].to_numpy(), '.', color=c1, label='H (correct)',  alpha=alpha)
+plt.plot(both_df.loc[cor, 'K_pre'].to_numpy(), both_df.loc[cor, 'K_dia'].to_numpy(), '.', color=c2, label='K (correct)', alpha=alpha)
+plt.plot(both_df.loc[cor, 'L_pre'].to_numpy(), both_df.loc[cor, 'L_dia'].to_numpy(), '.', color=c3, label='L (correct)', alpha=alpha)
 plt.xlabel("Precognition")
 plt.ylabel("DIALS")
 plt.legend()
 plt.show()
 
-
+lam_diffs = both_df.loc[cor, 'Wavelength_dia'] - both_df.loc[cor, 'Wavelength_pre']
+plt.figure()
+plt.hist(lam_diffs, bins=100)
+plt.xlabel('Wavelength Error (Angstroms)')
+plt.ylabel('Number of Spots')
+plt.show()
