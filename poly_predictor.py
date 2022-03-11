@@ -4,10 +4,6 @@ import gemmi
 from dxtbx.model.experiment_list import ExperimentListFactory
 from dials.array_family.flex import reflection_table
 
-# Hyperparameters for predictor
-lam_min = 0.95
-lam_max = 1.15
-d_min = 1.4
 
 # Load DIALS files
 expt_file = "dials_temp_files/ultra_refined.expt"
@@ -32,6 +28,15 @@ cell = gemmi.UnitCell(*cell_params)
 # Get U matrix
 U = np.asarray(cryst.get_U()).reshape(3,3)
 
+# Wavelengths per spot
+lams = refls['Wavelength'].as_numpy_array()
+
+# Hyperparameters for predictor
+lam_min = np.min(lams)
+lam_max = np.max(lams)
+d_min = 1.4 # TODO: What's a good value or calculation for this?
+
+# Get s1 vectprs
 la = LauePredictor(s0, cell, U, lam_min, lam_max, d_min, spacegroup)
-temp = la.predict_s1()
-print(temp.shape)
+s1 = la.predict_s1()
+print(s1.shape)
