@@ -435,6 +435,7 @@ class LauePredictor():
         Hall = Hall[np.any(Hall != 0, axis=1)]
         d = cell.calculate_d_array(Hall)
         Hall = Hall[d >= dmin]
+        self.Hall = Hall
 
         # TODO: Consider adding a flag to remove any systematic absences in a supplied space group
 
@@ -472,7 +473,7 @@ class LauePredictor():
         lams = -2.*(self.s0 * qall).sum(-1) / (qall*qall).sum(-1)
 
         # Using this wavelength per q, generate s1 vectors
-        s0 = self.s0 / lams
+        s0 = self.s0[None,:] / lams[:,None]
         s1_pred = qall + s0
 
         # Write s1 predictions
