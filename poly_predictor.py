@@ -56,9 +56,7 @@ class LauePredictor():
         d = cell.calculate_d_array(Hall)
         Hall = Hall[d >= dmin]
 
-        # Just remove any systematic absences in the space group
-        Hall = Hall[~rs.utils.is_absent(Hall, self.spacegroup)]
-        self.Hall = Hall
+        # TODO: Consider adding a flag to remove any systematic absences in a supplied space group
 
     @property
     def RB(self):
@@ -91,9 +89,11 @@ class LauePredictor():
         # TODO: Skip for now and implement this filtration later just to see -- we'll overpredict at high resolution
 
         # For each q, find the wavelength of the Ewald sphere it lies on
+        lams = -2.*(self.s0 * qall).sum(-1) / (qall*qall).sum(-1)
 
         # Using this wavelength per q, generate s1 vectors
+        s0 = self.s0 / lams
+        s1_pred = qall + s0
 
         # Write s1 predictions
-        s1_pred = # TODO: ASSIGN THIS
         return s1_pred
