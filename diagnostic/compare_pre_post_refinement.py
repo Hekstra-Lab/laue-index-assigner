@@ -4,7 +4,6 @@ from matplotlib import pyplot as plt
 from scitbx import matrix
 from IPython import embed
 from glob import glob
-from utils.precognition import parse_ii_inp_file_pairs
 import numpy as np
 import reciprocalspaceship as rs
 import gemmi
