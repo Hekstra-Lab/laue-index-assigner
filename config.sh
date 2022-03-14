@@ -16,11 +16,22 @@ if [ $count == 0 ]; then
   exit
 fi;
 
-# Check if bashrc already contains this env variable
+# If configuration file exists, prompt user if they want to overwrite
+if test -f "config_params.txt"; then
+  read -p $'A previous configuration exists. Overwrite? Enter [y/n].\n' OVERWRITE
+  if [ "$OVERWRITE" == "y" ]; then
+    rm config_params.txt
+  else
+    echo "Configuration cancelled. No files overwritten."
+    exit
+  fi
+fi
 
+# Start configuration file
+echo -n "" > config_params.txt
 
-# Export environment variables
-echo "export DIFF_IMG_DIR='$DIFF_IMG_DIR'" >> ~/.bashrc
+# Write the environment variable
+echo "export DIFF_IMG_DIR='$DIFF_IMG_DIR'" >> config_params.txt
 
 # Tell user to source bashrc
-echo "Please reload your shell for changes to take effect."
+echo "Please source config_params.txt for changes to take effect."
