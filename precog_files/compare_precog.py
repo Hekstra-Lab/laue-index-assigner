@@ -26,7 +26,7 @@ precog_df = parse_ii_inp_file_pairs(
 print('reading DIALS files')
 from dxtbx.model.experiment_list import ExperimentListFactory
 from dials.array_family.flex import reflection_table
-elist = ExperimentListFactory.from_json_file(expt_file)
+elist = ExperimentListFactory.from_json_file(expt_file, False)
 cryst = elist.crystals()[0]
 unit_cell = cryst.get_unit_cell()
 precog_df.spacegroup = gemmi.SpaceGroup(cryst.get_space_group().type().universal_hermann_mauguin_symbol())
