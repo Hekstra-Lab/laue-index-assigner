@@ -6,6 +6,7 @@ from dials.array_family.flex import reflection_table
 from dials.array_family import flex
 from dials.algorithms.spot_prediction import ray_intersection
 from matplotlib import pyplot as plt
+from IPython import embed
 
 # Load DIALS files
 expt_file = "dials_temp_files/ultra_refined.expt"
@@ -71,8 +72,8 @@ y = preds['xyzcal.mm'].parts()[1].as_numpy_array()
 
 # Get observed centroids
 sub_refls = refls.select(refls['imageset_id'] == img_num)
-xobs = sub_refls['xyzcal.mm'].parts()[0].as_numpy_array()
-yobs = sub_refls['xyzcal.mm'].parts()[1].as_numpy_array()
+xobs = sub_refls['xyzobs.mm'].parts()[0].as_numpy_array()
+yobs = sub_refls['xyzobs.mm'].parts()[1].as_numpy_array()
 
 # Plot image
 print('Plotting data.')
