@@ -10,11 +10,27 @@ This is just a place to stash useful functions and classes for diffraction geome
 
 def indexing_rotation_tril(A):
     """
-    Takes an indexing matrix (A) and returns a factorization, R@B = A 
-    wherein B is lower triangular and R is a rotation matrix.
+    Convert the reciprocal space indexing matrix, A into the produce of 
+    an ortogonal matrix U and a lower triangular matrix B
+
+    Parameters
+    ----------
+    A : np.array
+        A 3x3 indexing matrix such that the scattering vector `S1-S0=Q=A@h`
+
+    Returns
+    -------
+    U : np.array
+        An orthogonal 3x3 matrix
+    B : np.array
+        A 3x3 lower triangular matrix
     """
-    q,r = np.linalg.qr(A[::-1,::-1])
-    return q[::-1,::-1]
+    from scipy.linalg import rq
+    #R is a "right" or upper triangular matrix
+    #Q is an orthogonal (rotation) matrix
+    # A = Q.T@R.T
+    R,Q = rq(A.T)
+    return Q.T, R.T
 
 def normalize(A):
     """
