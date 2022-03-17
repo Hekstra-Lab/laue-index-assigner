@@ -4,7 +4,7 @@
 REL_PATH="$PWD"
 
 # Parameters
-FILE_INPUT_TEMPLATE="${DHFRMCCDDIR}/e080_###.mccd" # Env variable set by config.sh
+FILE_INPUT_TEMPLATE="${DIFF_IMG_DIR}/e080_###.mccd" # Env variable set by config.sh
 FILE_OUTPUT_TEMPLATE="${REL_PATH}/dials_temp_files/"
 # EXPECTED_WAVELENGTH=1.070490100011937
 EXPECTED_WAVELENGTH=1.04

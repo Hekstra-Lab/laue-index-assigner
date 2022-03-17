@@ -60,10 +60,6 @@ idx = flex.int(dials_df['new_ID'])
 refl_output["id"] = idx
 print('assigned IDs')
 
-print('repredicting spots')
-
-print('finished prediction')
-
 print('writing experiments')
 # Write experiment file with multiple beams
 new_expts.as_file(new_expt_filename)

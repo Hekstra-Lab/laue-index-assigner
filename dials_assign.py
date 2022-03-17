@@ -20,13 +20,14 @@ new_expt_filename = 'dials_temp_files/optimized.expt'
 new_refl_filename = 'dials_temp_files/optimized.refl'
 
 # Load DIALS files
+print('Loading DIALS files')
 expt_file = "dials_temp_files/stills_no_sb.expt"
 refl_file = "dials_temp_files/stills_no_sb.refl"
 
 elist = ExperimentListFactory.from_json_file(expt_file, check_format=False)
 refls = reflection_table.from_file(refl_file)
 
-#This will populate refls['s1'] & refls['rlp']
+# This will populate refls['s1'] & refls['rlp']
 refls.centroid_px_to_mm(elist)
 refls.map_centroids_to_reciprocal_space(elist)
 
@@ -37,6 +38,7 @@ refls['Wavelength'] = flex.double(len(refls))
 refls['miller_index'] = flex.miller_index(len(refls))
 
 # Loop over images and index by frame
+print('Reindexing images')
 for i in trange(len(elist.imagesets())):
     # Get experiment data from experiment objects
     experiment = elist[i]
@@ -95,7 +97,9 @@ for i in trange(len(elist.imagesets())):
     )
 
 # Write out experiment file
+print('Writing experiment data.')
 elist.as_file(new_expt_filename)
 
 # Write out reflection file
+print('Writing reflection data.')
 refls.as_file(new_refl_filename)
