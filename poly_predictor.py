@@ -9,8 +9,8 @@ from matplotlib import pyplot as plt
 from IPython import embed
 
 # Load DIALS files
-expt_file = "dials_temp_files/ultra_refined.expt"
-refl_file = "dials_temp_files/ultra_refined.refl"
+expt_file = "dials_temp_files/mega_ultra_refined.expt"
+refl_file = "dials_temp_files/mega_ultra_refined.refl"
 
 # Get data
 print('Loading DIALS files.')
@@ -41,8 +41,13 @@ cell = gemmi.UnitCell(*cell_params)
 # Get U matrix
 U = np.asarray(cryst.get_U()).reshape(3,3)
 
+# Get observed centroids
+sub_refls = refls.select(refls['imageset_id'] == img_num)
+xobs = sub_refls['xyzobs.mm.value'].parts()[0].as_numpy_array() 
+yobs = sub_refls['xyzobs.mm.value'].parts()[1].as_numpy_array() 
+
 # Wavelengths per spot
-lams = refls['Wavelength'].as_numpy_array()
+lams = sub_refls['Wavelength'].as_numpy_array()
 
 # Hyperparameters for predictor
 lam_min = np.min(lams)
@@ -69,11 +74,6 @@ preds = preds.select(intersects)
 # Get predicted centroids
 x = preds['xyzcal.mm'].parts()[0].as_numpy_array()
 y = preds['xyzcal.mm'].parts()[1].as_numpy_array()
-
-# Get observed centroids
-sub_refls = refls.select(refls['imageset_id'] == img_num)
-xobs = sub_refls['xyzobs.mm'].parts()[0].as_numpy_array()
-yobs = sub_refls['xyzobs.mm'].parts()[1].as_numpy_array()
 
 # Plot image
 print('Plotting data.')
