@@ -15,7 +15,7 @@ dials.refine -v -v  ${FILE_INPUT_TEMPLATE}${1} ${FILE_INPUT_TEMPLATE}${2} \
   refinery.engine='SparseLevMar' \
   refinement.reflections.outlier.minimum_number_of_reflections=1 \
   refinement.reflections.outlier.algorithm='mcd' \
-  refinement.reflections.outlier.separate_experiments='False' \
+  refinement.reflections.outlier.separate_images='True' \
   refinement.parameterisation.auto_reduction.action='remove' \
   parameterisation.auto_reduction.min_nref_per_parameter=1 \
   output.log="${FILE_OUTPUT_TEMPLATE}dials.${3}.log" \
@@ -23,9 +23,10 @@ dials.refine -v -v  ${FILE_INPUT_TEMPLATE}${1} ${FILE_INPUT_TEMPLATE}${2} \
   output.reflections="${FILE_OUTPUT_TEMPLATE}${3}.refl" 
 #  refinement.parameterisation.beam.fix=all \
 
-#  refinement.reflections.outlier.algorithm='null' \
 #  refinement.reflections.outlier.algorithm='tukey' \
 #  refinement.reflections.outlier.tukey.iqr_multiplier=0. \
 #  refinement.parameterisation.beam.constraints.parameter='Mu2' \
+#  refinement.reflections.outlier.mcd.threshold_probability=0.99 \
+#  refinement.reflections.outlier.algorithm='null' \
 
 cctbx.python store_wavelengths.py
