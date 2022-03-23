@@ -10,8 +10,8 @@ from dials.array_family import flex
 from tqdm import tqdm, trange
 
 # Parse arguments for filenames
-expt_file = 'dials_temp_files/ultra_refined.expt'
-refl_file = 'dials_temp_files/ultra_refined.refl'
+expt_file = 'dials_temp_files/mega_ultra_refined.expt'
+refl_file = 'dials_temp_files/mega_ultra_refined.refl'
 
 # Load DIALS files
 elist = ExperimentListFactory.from_json_file(expt_file, check_format=False)
