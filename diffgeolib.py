@@ -10,8 +10,8 @@ This is just a place to stash useful functions and classes for diffraction geome
 
 def indexing_rotation_tril(A):
     """
-    Convert the reciprocal space indexing matrix, A into the produce of 
-    an ortogonal matrix U and a lower triangular matrix B
+    Convert the reciprocal space indexing matrix, A into the product of 
+    an orthogonal matrix U and a lower triangular matrix B
 
     Parameters
     ----------
