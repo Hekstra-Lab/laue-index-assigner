@@ -27,4 +27,3 @@ dials.refine -v -v  ${FILE_INPUT_TEMPLATE}${1} ${FILE_INPUT_TEMPLATE}${2} \
 #  refinement.parameterisation.beam.constraints.parameter='Mu2' \
 #  refinement.reflections.outlier.mcd.threshold_probability=0.99 \
 
-cctbx.python store_wavelengths.py
