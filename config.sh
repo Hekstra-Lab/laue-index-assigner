@@ -11,14 +11,14 @@ if [ "$OPTION" == "1"  ]; then
 elif [ "$OPTION" = "2" ]; then
   read -p $'Enter the image you\'d like to start with: ' IMG1
   read -p $'Enter the image you\'d like to end with (inclusive!): ' IMG2
-  read -p $'Enter the experiment filename: ' EXPT
-  read -p $'Enter the reflection filename: ' REFL
+  read -p $'Enter the experiment filename: ' -e EXPT
+  read -p $'Enter the reflection filename: ' -e REFL
   cctbx.python utils/reset_images.py $IMG1 $IMG2 $EXPT $REFL
 
 # Option 3: Archive data in dials_temp_files
 elif [ "$OPTION" = "3" ]; then
-  read -p $'Enter the path you\'d like to save the tarball to:\n' $TARPATH
-  read -p $'Enter a short description for the dataset: \n' $DESC
+  read -p $'Enter the directory you\'d like to save the tarball to:\n' -e TARPATH
+  read -p $'Enter a short description for the dataset: \n' DESC
   bash utils/archive_analysis.sh $DESC $TARPATH
 
 # Invalid option
