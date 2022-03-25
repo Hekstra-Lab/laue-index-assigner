@@ -1,37 +1,28 @@
-# Use to define environment variables for location of data
+# UI script for interacting with dataset configurations
 
-# Get user input for variables
-read -p $'Enter the path to the directory containing the diffraction image files:\n' DIFF_IMG_DIR
+# Get user input on what to do
+read -p $'Enter the number for what you want to do.\n\t 1. Set the raw data directory.\n\t 2. Shrink the imageset for a pair of expt, refl files.\n\t 3. Archive the current analysis files.\n' OPTION
 
-# Check that directory exists
-if [ ! -d "$DIFF_IMG_DIR" ]; then
-  echo $DIFF_IMG_DIR "does not exist. Rerun configuration and provide accurate input."
+# Option 1: Set raw data directory
+if [ "$OPTION" == "1"  ]; then
+  bash utils/raw_data.sh
+
+# Option 2: Shrink the imageset for a pair of expt, refl files
+elif [ "$OPTION" = "2" ]; then
+  read -p $'Enter the image you\'d like to start with: ' IMG1
+  read -p $'Enter the image you\'d like to end with (inclusive!): ' IMG2
+  read -p $'Enter the experiment filename: ' EXPT
+  read -p $'Enter the reflection filename: ' REFL
+  cctbx.python utils/reset_images.py $IMG1 $IMG2 $EXPT $REFL
+
+# Option 3: Archive data in dials_temp_files
+elif [ "$OPTION" = "3" ]; then
+  read -p $'Enter the path you\'d like to save the tarball to:\n' $TARPATH
+  read -p $'Enter a short description for the dataset: \n' $DESC
+  bash utils/archive_analysis.sh $DESC $TARPATH
+
+# Invalid option
+else
+  echo "Please enter a valid number."
   exit
-fi;
-
-# Check that directory contains mccd files
-count=$(ls -1 ${DIFF_IMG_DIR}/*.mccd 2>/dev/null | wc -l)
-if [ $count == 0 ]; then
-  echo "Directory exists but contains no .mccd files. Rerun configuration and provide accurate input."
-  exit
-fi;
-
-# If configuration file exists, prompt user if they want to overwrite
-if test -f "config_params.txt"; then
-  read -p $'A previous configuration exists. Overwrite? Enter [y/n].\n' OVERWRITE
-  if [ "$OVERWRITE" == "y" ]; then
-    rm config_params.txt
-  else
-    echo "Configuration cancelled. No files overwritten."
-    exit
-  fi
 fi
-
-# Start configuration file
-echo -n "" > config_params.txt
-
-# Write the environment variable
-echo "export DIFF_IMG_DIR='$DIFF_IMG_DIR'" >> config_params.txt
-
-# Tell user to source bashrc
-echo "Please source config_params.txt for changes to take effect."
