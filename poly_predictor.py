@@ -1,6 +1,7 @@
 from diffgeolib import LauePredictor
 import numpy as np
 import gemmi
+from dxtbx.model import ExperimentList
 from dxtbx.model.experiment_list import ExperimentListFactory
 from dials.array_family.flex import reflection_table
 from dials.array_family import flex
@@ -16,6 +17,13 @@ refl_file = "dials_temp_files/mega_ultra_refined.refl"
 print('Loading DIALS files.')
 elist = ExperimentListFactory.from_json_file(expt_file, check_format=False)
 refls = reflection_table.from_file(refl_file)
+
+# Remove outliers
+print('Removing outliers')
+idx = refls.get_flags(refls.flags.used_in_refinement).as_numpy_array()
+idy = np.arange(len(elist))[idx].tolist()
+elist = ExperimentList([elist[i] for i in idy])
+refls = refls.select(flex.bool(idx))
 
 # Get experiment data from experiment objects
 print('Getting experiment data.')
@@ -74,7 +82,6 @@ preds = preds.select(intersects)
 # Get predicted centroids
 x = preds['xyzcal.mm'].parts()[0].as_numpy_array()
 y = preds['xyzcal.mm'].parts()[1].as_numpy_array()
-print(len(preds))
 
 # Plot image
 print('Plotting data.')
