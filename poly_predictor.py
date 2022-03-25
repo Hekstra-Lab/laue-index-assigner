@@ -50,8 +50,8 @@ yobs = sub_refls['xyzobs.mm.value'].parts()[1].as_numpy_array()
 lams = sub_refls['Wavelength'].as_numpy_array()
 
 # Hyperparameters for predictor
-lam_min = np.min(lams)
-lam_max = np.max(lams)
+lam_min = 0.95
+lam_max = 1.25
 d_min = 1.4 # TODO: What's a good value or calculation for this?
 
 # Get s1 vectors
@@ -74,11 +74,12 @@ preds = preds.select(intersects)
 # Get predicted centroids
 x = preds['xyzcal.mm'].parts()[0].as_numpy_array()
 y = preds['xyzcal.mm'].parts()[1].as_numpy_array()
+print(len(preds))
 
 # Plot image
 print('Plotting data.')
-plt.scatter(x, y, c='r', alpha=0.5)
-plt.scatter(xobs, yobs, c='b', alpha=0.5)
+plt.scatter(x, y, c='r', s=2, alpha=0.5)
+plt.scatter(xobs, yobs, c='b', s=2, alpha=0.5)
 plt.xlabel('x (mm)')
 plt.ylabel('y (mm)')
 plt.title('Predicted vs observed centroids')
