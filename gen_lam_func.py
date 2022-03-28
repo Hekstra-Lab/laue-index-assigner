@@ -2,14 +2,12 @@
 This script generates the lambda-curve for the experiment.
 """
 import numpy as np
-import reciprocalspaceship as rs
 from dxtbx.model import ExperimentList
 from dxtbx.model.experiment_list import ExperimentListFactory
 from dials.array_family.flex import reflection_table
 from dials.array_family import flex
 from matplotlib import pyplot as plt
 import scipy
-import seaborn as sns
 from IPython import embed
 
 # TODO: Write function 
@@ -31,23 +29,22 @@ refls.map_centroids_to_reciprocal_space(elist)
 rlps = refls['rlp'].as_numpy_array()
 norms = np.linalg.norm(rlps, axis=1)
 
-# Get angle between rlp and beam vector
-z = elist[0].beam.get_unit_s0()
-thetas = rs.utils.math.angle_between(rlps, z) # in radians
+## Get angle between rlp and beam vector
+#z = elist[0].beam.get_unit_s0()
+#thetas = rs.utils.math.angle_between(rlps, z) # in radians
 
 # Get wavelength of rlp
 lams = refls['Wavelength'].as_numpy_array()
 
-# Relevant plot
-x = norms*np.cos(np.deg2rad(thetas))
-y = norms*np.sin(np.deg2rad(thetas))
-plt.plot(x, y, '.k', alpha=0.1)
-plt.xlim(-1,0.1)
-plt.ylim(-0.1,1)
-plt.show()
+## Relevant plot
+#x = norms*np.cos(np.deg2rad(thetas))
+#y = norms*np.sin(np.deg2rad(thetas))
+#plt.plot(x, y, '.k', alpha=0.1)
+#plt.xlim(-1,0.1)
+#plt.ylim(-0.1,1)
+#plt.show()
 
 # Fit with kernel density estimator
-train_data = np.asarray([x, y])
+normalized_resolution = norms**2
+train_data = np.asarray([normalized_resolution, lams])
 kde = scipy.stats.gaussian_kde(train_data)
-
-# Above is a 2D Cartesian estimator...can we just use a 1D radial estimator?
