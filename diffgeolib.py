@@ -267,6 +267,7 @@ class LaueAssigner():
         self._qpred = np.zeros_like(self._s1)
         self._H = np.zeros_like(self._s1)
         self._wav = np.zeros(len(self._H))
+        self._harmonics = np.zeros(len(self._H))
         self._inliers = np.ones(len(self._s1), dtype=bool)
 
         #Initialize the full reciprocal grid
@@ -308,6 +309,10 @@ class LaueAssigner():
     def wav(self):
         return self._wav[self._inliers]
 
+    @property
+    def harmonics(self):
+        return self._harmonics[self._inliers]
+
     #<-- setters that operate on the currently inlying set
     def set_qpred(self, qpred):
         self._qpred[self._inliers] = qpred
@@ -322,6 +327,9 @@ class LaueAssigner():
 
     def set_inliers(self, inliers):
         self._inliers[self._inliers] = inliers
+
+    def set_harmonics(self, harmonics):
+        self._harmonics[self._inliers] = harmonics
     #--> setters that operate on the currently inlying set
 
     def reset_inliers(self):
@@ -352,6 +360,8 @@ class LaueAssigner():
         ) 
         Hall = Hall[feasible]
         qall = qall[feasible]
+
+        # Keep track of harmonics in the feasible set TODO
 
         #Remove harmonics from the feasible set
         Raypred = hkl2ray(Hall)
