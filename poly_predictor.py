@@ -7,6 +7,8 @@ from dials.array_family.flex import reflection_table
 from dials.array_family import flex
 from dials.algorithms.spot_prediction import ray_intersection
 from matplotlib import pyplot as plt
+import scipy
+from gen_lam_func import gen_kde
 from IPython import embed
 
 # Load DIALS files
@@ -65,30 +67,59 @@ d_min = 1.4 # TODO: What's a good value or calculation for this?
 # Get s1 vectors
 print('Predicting s1 vectors.')
 la = LauePredictor(s0, cell, U, lam_min, lam_max, d_min, spacegroup)
-s1 = la.predict_s1()
+s1, new_lams, q_vecs = la.predict_s1()
 
 # Build new reflection table for predictions
 preds = reflection_table.empty_standard(len(s1))
 
-# Populate s1 and phi columns
+# Populate needed columns
 preds['s1'] = flex.vec3_double(s1)
 preds['phi'] = flex.double(np.zeros(len(s1))) # Data are stills
+preds['wavelength'] = flex.double(new_lams)
+preds['rlp'] = flex.vec3_double(q_vecs)
 
 # Get which reflections intersect detector
 print('Getting centroids.')
 intersects = ray_intersection(experiment.detector, preds)
 preds = preds.select(intersects)
+new_lams = new_lams[intersects]
+
+# Generate a KDE
+_, _, kde = gen_kde(elist, refls)
 
 # Get predicted centroids
 x = preds['xyzcal.mm'].parts()[0].as_numpy_array()
 y = preds['xyzcal.mm'].parts()[1].as_numpy_array()
 
+# Get probability densities for predictions:
+rlps = preds['rlp'].as_numpy_array()
+norms = (np.linalg.norm(rlps, axis=1))**2
+pred_data = [norms, new_lams]
+probs = kde.pdf(pred_data)
+
+# Cut off using log probabilities
+sel = np.log(probs) >= cutoff_log
+x_sel = x[sel]
+y_sel = y[sel]
+probs_sel = probs[sel]
+
 # Plot image
 print('Plotting data.')
-plt.scatter(x, y, c='r', s=2, alpha=0.5)
-plt.scatter(xobs, yobs, c='b', s=2, alpha=0.5)
+cmap = plt.cm.get_cmap('viridis')
+plt.scatter(xobs, yobs, c='k', marker='x', s=8, alpha=0.9)
+plt.scatter(x_sel, y_sel, c=probs_sel, cmap=cmap, s=2, alpha=1)
+plt.colorbar()
 plt.xlabel('x (mm)')
 plt.ylabel('y (mm)')
 plt.title('Predicted vs observed centroids')
 plt.legend(labels=['Predicted', 'Observed'])
+plt.show()
+
+cutoffs = np.linspace(min(probs), max(probs), 100)
+accepted = np.zeros(len(cutoffs))
+for i,j in enumerate(cutoffs):   
+    accepted[i] = sum(probs >= j)
+plt.scatter(cutoffs, accepted, s=2, c='k')
+plt.xlabel('cutoff prob. density')
+plt.ylabel('# accepted spots')
 plt.show()
