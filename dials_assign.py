@@ -83,6 +83,7 @@ for i in trange(len(elist.imagesets())):
     cryst.set_unit_cell(unit_cell(la.cell.parameters))
 
     # Write data to reflections
+    refls['harmonics'] = flex.bool([False]*len(refls))
     refls['s1'].set_selected(
         idx,
         flex.vec3_double(s1)
