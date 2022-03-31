@@ -95,6 +95,10 @@ for i in trange(len(elist.imagesets())):
         idx, 
         flex.double(la._wav.tolist()),
     )
+    refls['harmonics'].set_selected(
+        idx,
+        flex.bool(la._harmonics.tolist()),
+    )
 
 # Write out experiment file
 print('Writing experiment data.')
