@@ -494,4 +494,4 @@ class LauePredictor():
         s1_pred = qall + s0
 
         # Write s1 predictions
-        return s1_pred, lams, qall
+        return s1_pred, lams, qall, Hall

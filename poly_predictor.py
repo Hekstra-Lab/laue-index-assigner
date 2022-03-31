@@ -67,7 +67,7 @@ d_min = 1.4 # TODO: What's a good value or calculation for this?
 # Get s1 vectors
 print('Predicting s1 vectors.')
 la = LauePredictor(s0, cell, U, lam_min, lam_max, d_min, spacegroup)
-s1, new_lams, q_vecs = la.predict_s1()
+s1, new_lams, q_vecs, millers = la.predict_s1()
 
 # Build new reflection table for predictions
 preds = reflection_table.empty_standard(len(s1))
@@ -77,6 +77,7 @@ preds['s1'] = flex.vec3_double(s1)
 preds['phi'] = flex.double(np.zeros(len(s1))) # Data are stills
 preds['wavelength'] = flex.double(new_lams)
 preds['rlp'] = flex.vec3_double(q_vecs)
+preds['miller_index'] = flex.miller_index(millers.astype('int').tolist()) 
 
 # Get which reflections intersect detector
 print('Getting centroids.')
