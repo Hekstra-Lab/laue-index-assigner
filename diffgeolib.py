@@ -362,10 +362,11 @@ class LaueAssigner():
         qall = qall[feasible]
 
         # Keep track of harmonics in the feasible set TODO
+        Raypred = hkl2ray(Hall)
+        _,idx, counts = np.unique(Raypred, return_index=True, return_counts=True, axis=0)
+        harmonics = (counts > 1)
 
         #Remove harmonics from the feasible set
-        Raypred = hkl2ray(Hall)
-        _,idx   = np.unique(Raypred, return_index=True, axis=0)
         Hall = Hall[idx]
         qall = qall[idx]
 
@@ -379,11 +380,13 @@ class LaueAssigner():
         H   = Hall[idx]
         qpred = qall[idx]
         wav = wav_all[idx]
+        harmonics = harmonics[idx]
 
         # Set all attributes to match the current assignment
         self.set_H(H)
         self.set_wav(wav)
         self.set_qpred(qpred)
+        self.set_harmonics(harmonics)
 
     def update_rotation(self):
         """ Update the rotation matrix (self.R) based on the inlying refls """
@@ -459,6 +462,8 @@ class LauePredictor():
 
         This method provides:
             s1_pred -- predicted feasible s1 vectors
+            lams -- the wavelengths (in Angstroms) associated with these s1 vectors
+            qall -- the q vectors associated with these s1 vectors
         """
         # Generate the feasible set of reflections from the current geometry
         Hall = self.Hall
