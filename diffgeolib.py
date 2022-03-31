@@ -450,13 +450,11 @@ class LauePredictor():
         Hall = Hall[d >= dmin]
         self.Hall = Hall
 
-        # TODO: Consider adding a flag to remove any systematic absences in a supplied space group
-
     @property
     def RB(self):
         return self.R@self.B
 
-    def predict_s1(self):
+    def predict_s1(self, delete_harmonics=False):
         """ 
         Predicts all s1 vectors for all feasible spots given some resolution-dependent bandwidth
 
@@ -477,9 +475,13 @@ class LauePredictor():
 
         # Remove harmonics from the feasible set
         Raypred = hkl2ray(Hall)
-        _,idx   = np.unique(Raypred, return_index=True, axis=0)
-        Hall = Hall[idx]
+        _,idx,counts   = np.unique(Raypred, return_index=True, return_counts=True, axis=0)
+        Hall = Hall[idx] # Remove duplicates
         qall = qall[idx]
+        if(delete_harmonics):
+            idx = (counts > 1) # Remove last harmonic
+            Hall = Hall[idx]
+            qall = qall[idx]
 
         # Filter reflections which do not satisfy the resolution-dependent bandwidth
         # TODO: Skip for now and implement this filtration later just to see -- we'll overpredict at high resolution
@@ -493,4 +495,3 @@ class LauePredictor():
 
         # Write s1 predictions
         return s1_pred, lams, qall
-
