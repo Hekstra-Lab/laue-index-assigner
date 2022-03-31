@@ -16,10 +16,8 @@ from IPython import embed
 def gen_kde(elist, refls):
     """ This function trains a Gaussian KDE on 1/d^2 and wavelengths of submitted strong spots"""
     # Firstly remove all harmonic reflections from consideration
-    print(len(refls))
     harmonics = refls['harmonics'].as_numpy_array()
-    refls = refls.select(harmonics)
-    print(len(refls))
+    refls = refls.select(flex.bool(~harmonics))
 
     # Get rlps and normalize
     print('Calculating rlps')
