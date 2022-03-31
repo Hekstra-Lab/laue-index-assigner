@@ -98,6 +98,7 @@ pred_data = [norms, new_lams]
 probs = kde.pdf(pred_data)
 
 # Cut off using log probabilities
+cutoff_log = 0 # TODO Make this a hyperparameter
 sel = np.log(probs) >= cutoff_log
 x_sel = x[sel]
 y_sel = y[sel]
