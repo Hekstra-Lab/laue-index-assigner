@@ -103,6 +103,7 @@ sel = np.log(probs) >= cutoff_log
 x_sel = x[sel]
 y_sel = y[sel]
 probs_sel = probs[sel]
+preds = preds.select(flex.bool(sel))
 
 # Plot image
 print('Plotting data.')
@@ -134,3 +135,6 @@ plt.scatter(cutoffs, accepted, s=2, c='k')
 plt.xlabel('cutoff prob. density')
 plt.ylabel('# accepted spots')
 plt.show()
+
+# Write data
+preds.as_file('dials_temp_files/predicted.refl')
