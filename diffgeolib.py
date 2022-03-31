@@ -267,7 +267,7 @@ class LaueAssigner():
         self._qpred = np.zeros_like(self._s1)
         self._H = np.zeros_like(self._s1)
         self._wav = np.zeros(len(self._H))
-        self._harmonics = np.zeros(len(self._H))
+        self._harmonics = np.zeros(len(self._s1), dtype=bool)
         self._inliers = np.ones(len(self._s1), dtype=bool)
 
         #Initialize the full reciprocal grid
