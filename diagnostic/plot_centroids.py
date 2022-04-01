@@ -3,9 +3,17 @@ import numpy as np
 import pandas as pd
 from dxtbx.model.experiment_list import ExperimentListFactory
 from dials.array_family.flex import reflection_table
+import argparse
 
-expt_file = "/n/home04/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/ultra_refined.expt" # <-- Fill this in 
-refl_file = "/n/home04/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/ultra_refined.refl" # <-- Fill this in 
+# Get I/O options from user
+parser = argparse.ArgumentParser()
+parser.add_argument('in_expt', help='Input experiment file.')
+parser.add_argument('in_refl', help='Input reflection file.')
+args = parser.parse_args()
+
+# Get files
+expt_filename = args.in_expt
+refl_filename = args.in_refl
 
 #centroid distance cutoff in pixels
 centroid_max_distance = 10.
