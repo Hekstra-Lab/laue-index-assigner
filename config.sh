@@ -1,5 +1,10 @@
 # UI script for interacting with dataset configurations
 
+# Make temp files directory if it does not exist
+if [ ! -d 'dials_temp_files' ]; then
+    mkdir dials_temp_files
+fi
+
 # Get user input on what to do
 read -p $'Enter the number for what you want to do.\n\t 1. Set the raw data directory.\n\t 2. Shrink the imageset for a pair of expt, refl files.\n\t 3. Archive the current analysis files.\n' OPTION
 
