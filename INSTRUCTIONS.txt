@@ -2,31 +2,29 @@ Hi, here are the instructions for the current pipeline:
 
 First run config.sh to set environment variables, and run setpaths.sh for your DIALS installation.
 
-There are two pipelines right now. The first makes beams then stills, the second makes stills then beams.
+If reciprocalspaceship is not installed in your cctbx.python environment, please install using
+    cctbx.python -m pip install reciprocalspaceship
 
-PIPELINE 1 ORDER:
-
-scan_varying_indexer.sh
-dials_assign.py
-assign_beams.py
-multi_to_stills.py
-
-PIPELINE 2 ORDER:
+PIPELINE ORDER (this is encoded in pipeline.sh):
 
 scan_varying_indexer.sh
-dials_assign.py
 sequence_to_stills_no_sb.py
+dials_assign.py
 assign_beams_to_stills.py
+refine_initial.sh
+refine_remove_outliers.sh
+poly_predictor.py
 
-Please run all Python files with cctbx.python. At this point you can try refinement with diffBragg -- end of working pipeline right now.
+Please run all Python files with cctbx.python. Integration is under development.
 
 A quick rundown of the temporary DIALS files by name and in order of generation by above scripts:
 
 strong_1.04.refl  <-- Strong spots at lambda=1.04 angstroms
 expected_index.* <-- Output of initial monochromatic dials.index at 1.04 angstroms
 refined_varying.* <-- Output of scan-varying monochromatic refinement
-optimized.refl <-- Output of Kevin's optimization code for Miller indices
-multi.* <-- Output of script that generates multiple beam models for every image
-multi_stills.* <-- Output that generates stills from multi.*; similar to dials.sequence_to_stills()
-stills_no_sb.* <-- Output of script that generates stills without using shoeboxes before assigning beams
-stills_no_sb_multi.* <-- Output that generates beams for stills_no_sb.* - one beam per reflection
+stills_no_sb.* <-- Output of script that generates stills without using shoeboxes 
+optimized.* <-- Output of rotation optimization code for Miller indices
+multi.* <-- Output that generates experiment beams for stills - one beam per reflection
+ultra_refined.* <-- Output that freely refined wavelengths for reflections while constraining all other parameters
+mega_ultra_refined.* <-- Output that serves as the final geometric refinement of the experiment
+predicted.refl <-- Predictions generated using the refined experimental model
