@@ -2,6 +2,9 @@ Hi, here are the instructions for the current pipeline:
 
 First run config.sh to set environment variables, and run setpaths.sh for your DIALS installation.
 
+If reciprocalspaceship is not installed in your cctbx.python environment, please install using
+    cctbx.python -m pip install reciprocalspaceship
+
 PIPELINE ORDER (this is encoded in pipeline.sh):
 
 scan_varying_indexer.sh
@@ -10,7 +13,6 @@ dials_assign.py
 assign_beams_to_stills.py
 refine_initial.sh
 refine_remove_outliers.sh
-gen_lam_func.py
 poly_predictor.py
 
 Please run all Python files with cctbx.python. Integration is under development.
