@@ -71,17 +71,19 @@ for img_num in trange(len(elist.imagesets())):
     # Get s1 vectors
     la = LauePredictor(s0, cell, U, lam_min, lam_max, d_min, spacegroup)
     s1, new_lams, q_vecs, millers = la.predict_s1()
-    
+
     # Build new reflection table for predictions
     preds = reflection_table.empty_standard(len(s1))
     
     # Populate needed columns
+    preds['id'] = flex.int([int(experiment.identifier)]*len(preds)) # As long as wavelength doesn't matter...
+    preds['imageset_id'] = flex.int([img_num]*len(preds))
     preds['s1'] = flex.vec3_double(s1)
     preds['phi'] = flex.double(np.zeros(len(s1))) # Data are stills
     preds['wavelength'] = flex.double(new_lams)
     preds['rlp'] = flex.vec3_double(q_vecs)
     preds['miller_index'] = flex.miller_index(millers.astype('int').tolist()) 
-    
+
     # Get which reflections intersect detector
     intersects = ray_intersection(experiment.detector, preds)
     preds = preds.select(intersects)
