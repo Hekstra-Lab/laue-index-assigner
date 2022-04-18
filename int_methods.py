@@ -79,7 +79,6 @@ def integrate(phil_file, experiments, indexed, predicted):
     indexed,_ = process_reference(indexed)
     experiments = ProfileModelFactory.create(params, experiments, indexed)
 
-    new_experiments = ExperimentList()
     new_reflections = flex.reflection_table()
     for expt_id, expt in enumerate(experiments):
         if(expt.profile.sigma_b() < params.profile.gaussian_rs.parameters.sigma_b_cutoff):
@@ -89,9 +88,7 @@ def integrate(phil_file, experiments, indexed, predicted):
             boxes = expt.profile.compute_bbox(refls, expt.crystal, expt.beam, expt.detector) # Generate bounding boxes
             refls['bbox'] = boxes
             new_reflections.extend(refls)
-            new_experiments.append(expt)
 
-    experiments = new_experiments
     indexed = new_reflections
     if len(experiments) == 0:
         raise RuntimeError("No experiments after filtering by sigma_b")
