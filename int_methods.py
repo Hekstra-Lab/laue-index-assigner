@@ -10,6 +10,8 @@ from scipy.interpolate import interp1d
 from dxtbx.model import ExperimentList
 from dials.algorithms.integration.stills_significance_filter import SignificanceFilter
 from dials.algorithms.indexing.stills_indexer import calc_2D_rmsd_and_displacements
+from tqdm import tqdm, trange
+from copy import deepcopy
 import sys
 
 # Note: these imports and following 3 methods will eventually be in CCTBX/simtbx/diffBragg/utils
@@ -94,8 +96,21 @@ def integrate(phil_file, experiments, indexed, predicted):
         raise RuntimeError("No experiments after filtering by sigma_b")
 
     predicted.match_with_reference(indexed)
-    integrator = create_integrator(params, experiments, predicted)
-    integrated = integrator.integrate()
+    integrated = flex.reflection_table()
+    for i in trange(len(experiments.imagesets())): # Loop over images
+        img_predicted = predicted.select(predicted['imageset_id'] == i)
+        if len(img_predicted) == 0:
+            continue
+        expt_ids = img_predicted.experiment_identifiers().values()
+        img_experiments = deepcopy(experiments)
+        img_experiments.select_on_experiment_identifiers(list(expt_ids[0]))
+        img_experiments[0].identifier = expt_ids[0]
+        img_predicted.reset_ids()
+        img_integrator = create_integrator(params, img_experiments, img_predicted)
+        img_integrated = img_integrator.integrate()
+        if i > 0:
+            img_integrated.experiment_identifiers()[0] = integrated.experiment_identifiers().values()[0]
+        integrated.extend(img_integrated)
 
     if params.significance_filter.enable:
 
