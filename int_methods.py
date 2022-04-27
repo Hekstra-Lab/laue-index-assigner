@@ -103,7 +103,7 @@ def integrate(phil_file, experiments, indexed, predicted):
             continue
         expt_ids = img_predicted.experiment_identifiers().values()
         img_experiments = deepcopy(experiments)
-        img_experiments.select_on_experiment_identifiers(list(expt_ids[0]))
+        img_experiments.select_on_experiment_identifiers(list([expt_ids[0]]))
         img_experiments[0].identifier = expt_ids[0]
         img_predicted.reset_ids()
         img_integrator = create_integrator(params, img_experiments, img_predicted)
@@ -112,54 +112,54 @@ def integrate(phil_file, experiments, indexed, predicted):
             img_integrated.experiment_identifiers()[0] = integrated.experiment_identifiers().values()[0]
         integrated.extend(img_integrated)
 
-    if params.significance_filter.enable:
+    #if params.significance_filter.enable:
 
-        sig_filter = SignificanceFilter(params)
-        filtered_refls = sig_filter(experiments, integrated)
-        accepted_expts = ExperimentList()
-        accepted_refls = flex.reflection_table()
-        for expt_id, expt in enumerate(experiments):
-            refls = filtered_refls.select(filtered_refls["id"] == expt_id)
-            if len(refls) > 0:
-                accepted_expts.append(expt)
-                refls["id"] = flex.int(len(refls), len(accepted_expts) - 1)
-                accepted_refls.extend(refls)
+    #    sig_filter = SignificanceFilter(params)
+    #    filtered_refls = sig_filter(experiments, integrated)
+    #    accepted_expts = ExperimentList()
+    #    accepted_refls = flex.reflection_table()
+    #    for expt_id, expt in enumerate(experiments):
+    #        refls = filtered_refls.select(filtered_refls["id"] == expt_id)
+    #        if len(refls) > 0:
+    #            accepted_expts.append(expt)
+    #            refls["id"] = flex.int(len(refls), len(accepted_expts) - 1)
+    #            accepted_refls.extend(refls)
 
-        if len(accepted_refls) == 0:
-            raise RuntimeError("No reflections left after applying significance filter")
-        experiments = accepted_expts
-        integrated = accepted_refls
+    #    if len(accepted_refls) == 0:
+    #        raise RuntimeError("No reflections left after applying significance filter")
+    #    experiments = accepted_expts
+    #    integrated = accepted_refls
+#
+#    # Delete the shoeboxes used for intermediate calculations, if requested
+#    if params.integration.debug.delete_shoeboxes and "shoebox" in integrated:
+#        del integrated["shoebox"]
+#
+#
+    #rmsd_indexed, _ = calc_2D_rmsd_and_displacements(indexed)
+    #log_str = "RMSD indexed (px): %f\n" % rmsd_indexed
+    #for i in range(6):
+    #    bright_integrated = integrated.select(
+    #        (
+    #                integrated["intensity.sum.value"]
+    #                / flex.sqrt(integrated["intensity.sum.variance"])
+    #        )
+    #        >= i
+    #    )
+    #    if len(bright_integrated) > 0:
+    #        rmsd_integrated, _ = calc_2D_rmsd_and_displacements(bright_integrated)
+    #    else:
+    #        rmsd_integrated = 0
+    #    log_str += (
+    #            "N reflections integrated at I/sigI >= %d: % 4d, RMSD (px): %f\n"
+    #            % (i, len(bright_integrated), rmsd_integrated)
+    #    )
 
-    # Delete the shoeboxes used for intermediate calculations, if requested
-    if params.integration.debug.delete_shoeboxes and "shoebox" in integrated:
-        del integrated["shoebox"]
+    #for crystal_model in experiments.crystals():
+    #    if hasattr(crystal_model, "get_domain_size_ang"):
+    #        log_str += ". Final ML model: domain size angstroms: {:f}, half mosaicity degrees: {:f}".format(
+    #            crystal_model.get_domain_size_ang(),
+    #            crystal_model.get_half_mosaicity_deg(),
+    #        )
 
-
-    rmsd_indexed, _ = calc_2D_rmsd_and_displacements(indexed)
-    log_str = "RMSD indexed (px): %f\n" % rmsd_indexed
-    for i in range(6):
-        bright_integrated = integrated.select(
-            (
-                    integrated["intensity.sum.value"]
-                    / flex.sqrt(integrated["intensity.sum.variance"])
-            )
-            >= i
-        )
-        if len(bright_integrated) > 0:
-            rmsd_integrated, _ = calc_2D_rmsd_and_displacements(bright_integrated)
-        else:
-            rmsd_integrated = 0
-        log_str += (
-                "N reflections integrated at I/sigI >= %d: % 4d, RMSD (px): %f\n"
-                % (i, len(bright_integrated), rmsd_integrated)
-        )
-
-    for crystal_model in experiments.crystals():
-        if hasattr(crystal_model, "get_domain_size_ang"):
-            log_str += ". Final ML model: domain size angstroms: {:f}, half mosaicity degrees: {:f}".format(
-                crystal_model.get_domain_size_ang(),
-                crystal_model.get_half_mosaicity_deg(),
-            )
-
-    print(log_str)
+    #print(log_str)
     return experiments, integrated
