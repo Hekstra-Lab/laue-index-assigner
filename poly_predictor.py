@@ -13,8 +13,10 @@ from tqdm import tqdm, trange
 from IPython import embed
 
 # Load DIALS files
-expt_file = "dials_temp_files/mega_ultra_refined.expt"
-refl_file = "dials_temp_files/mega_ultra_refined.refl"
+expt_file = "dials_temp_files/shrunk.expt"
+refl_file = "dials_temp_files/shrunk.refl"
+#expt_file = "dials_temp_files/mega_ultra_refined.expt"
+#refl_file = "dials_temp_files/mega_ultra_refined.refl"
 
 # Get data
 print('Loading DIALS files.')
@@ -74,6 +76,12 @@ for img_num in trange(len(elist.imagesets())):
 
     # Build new reflection table for predictions
     preds = reflection_table.empty_standard(len(s1))
+    del preds['intensity.prf.value']
+    del preds['intensity.prf.variance']
+    del preds['intensity.sum.value']
+    del preds['intensity.sum.variance']
+    del preds['lp']
+    del preds['profile_correlation']
     
     # Populate needed columns
     preds['id'] = flex.int([int(experiment.identifier)]*len(preds)) # As long as wavelength doesn't matter...
