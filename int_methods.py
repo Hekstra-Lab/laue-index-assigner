@@ -10,6 +10,8 @@ from scipy.interpolate import interp1d
 from dxtbx.model import ExperimentList
 from dials.algorithms.integration.stills_significance_filter import SignificanceFilter
 from dials.algorithms.indexing.stills_indexer import calc_2D_rmsd_and_displacements
+from dials.model.data import Shoebox
+from dials.algorithms.shoebox import MaskCode
 from tqdm import tqdm, trange
 from copy import deepcopy
 import sys
@@ -24,6 +26,7 @@ from dials.command_line.stills_process import phil_scope
 
 from dials.algorithms.integration.integrator import create_integrator
 from dials.algorithms.profile_model.factory import ProfileModelFactory
+from dials.algorithms.profile_model.gaussian_rs.model import Model
 from dxtbx.model import ExperimentList
 from dials.array_family import flex
 from IPython import embed
@@ -79,24 +82,47 @@ def integrate(phil_file, experiments, indexed, predicted):
     """
     params = stills_process_params_from_file(phil_file) 
     indexed,_ = process_reference(indexed)
-    experiments = ProfileModelFactory.create(params, experiments, indexed)
+    #experiments = ProfileModelFactory.create(params, experiments, indexed)
 
     new_reflections = flex.reflection_table()
-    for expt_id, expt in enumerate(experiments):
-        if(expt.profile.sigma_b() < params.profile.gaussian_rs.parameters.sigma_b_cutoff):
-            refls = indexed.select(indexed["id"] == expt_id+1) # 1-indexed
-            if(len(refls) == 0):
-                continue
-            boxes = expt.profile.compute_bbox(refls, expt.crystal, expt.beam, expt.detector) # Generate bounding boxes
-            refls['bbox'] = boxes
-            new_reflections.extend(refls)
+    #for expt_id, expt in enumerate(experiments):
+    #    if(expt.profile.sigma_b() < params.profile.gaussian_rs.parameters.sigma_b_cutoff):
+    #        refls = indexed.select(indexed["id"] == expt_id+1) # 1-indexed
+    #        if(len(refls) == 0):
+    #            continue
+    #        boxes = expt.profile.compute_bbox(refls, expt.crystal, expt.beam, expt.detector) # Generate bounding boxes
+    #        refls['bbox'] = boxes
+    #        new_reflections.extend(refls)
 
-    indexed = new_reflections
-    if len(experiments) == 0:
-        raise RuntimeError("No experiments after filtering by sigma_b")
+    #indexed = new_reflections
+    #if len(experiments) == 0:
+    #    raise RuntimeError("No experiments after filtering by sigma_b")
+    #boxes = expt.profile.compute_bbox(refls, expt.crystal, expt.beam, expt.detector) # Generate bounding boxes
+    #refls['bbox'] = boxes
 
+    # Create shoeboxes
+    shoeboxes = []
+    print("Creating shoeboxes for profile fitting")
+    for i in trange(len(indexed)):
+        x1, x2, y1, y2, z1, z2 = indexed[i]['bbox']
+        sbox = Shoebox(indexed[i]['bbox']) 
+        img_data = experiments.imagesets()[indexed[i]['imageset_id']].get_raw_data(0)
+        img_data = np.array([data.as_numpy_array() for data in img_data])
+        refl_data = img_data[0, y1:y2, x1:x2].reshape((1, y2-y1, x2-x1)) # Assumes single-panel detector
+        sbox.data = flex.float(np.ascontiguousarray(refl_data))
+        sbox.background = flex.float(np.zeros_like(refl_data))
+        mask = np.full(shape = refl_data.shape, fill_value=MaskCode.Valid, dtype=np.int)
+        sbox.mask = flex.int(np.ascontiguousarray(mask))
+        shoeboxes.append(sbox)
+    indexed['shoebox'] = flex.shoebox(shoeboxes)
+
+    # Integrate by image
+    print("Integrating reflections by image")
     predicted.match_with_reference(indexed)
     integrated = flex.reflection_table()
+    new_expts = ExperimentList()
+    sigma_bs = np.zeros(len(experiments))
+    sigma_ms = np.zeros(len(experiments))
     for i in trange(len(experiments.imagesets())): # Loop over images
         img_predicted = predicted.select(predicted['imageset_id'] == i)
         if len(img_predicted) == 0:
@@ -105,12 +131,16 @@ def integrate(phil_file, experiments, indexed, predicted):
         img_experiments = deepcopy(experiments)
         img_experiments.select_on_experiment_identifiers(list([expt_ids[0]]))
         img_experiments[0].identifier = expt_ids[0]
+        img_experiments[0].profile = Model.create_from_reflections(params, indexed.select(indexed['imageset_id'] == i), img_experiments[0].crystal, img_experiments[0].beam, img_experiments[0].detector)
+        sigma_bs[i] = img_experiments[0].profile.to_dict()['sigma_b']
+        sigma_ms[i] = img_experiments[0].profile.to_dict()['sigma_m']
         img_predicted.reset_ids()
         img_integrator = create_integrator(params, img_experiments, img_predicted)
         img_integrated = img_integrator.integrate()
         if i > 0:
             img_integrated.experiment_identifiers()[0] = integrated.experiment_identifiers().values()[0]
         integrated.extend(img_integrated)
+        new_expts.append(img_experiments[0])
 
     #if params.significance_filter.enable:
 
@@ -162,4 +192,6 @@ def integrate(phil_file, experiments, indexed, predicted):
     #        )
 
     #print(log_str)
+    np.savetxt('sigma_b.txt', sigma_bs)
+    np.savetxt('sigma_m.txt', sigma_ms)
     return experiments, integrated
