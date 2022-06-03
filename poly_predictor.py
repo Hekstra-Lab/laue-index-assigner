@@ -13,10 +13,8 @@ from tqdm import tqdm, trange
 from IPython import embed
 
 # Load DIALS files
-expt_file = "dials_temp_files/shrunk.expt"
-refl_file = "dials_temp_files/shrunk.refl"
-#expt_file = "dials_temp_files/mega_ultra_refined.expt"
-#refl_file = "dials_temp_files/mega_ultra_refined.refl"
+expt_file = "dials_temp_files/mega_ultra_refined.expt"
+refl_file = "dials_temp_files/mega_ultra_refined.refl"
 
 # Get data
 print('Loading DIALS files.')
