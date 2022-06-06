@@ -1,0 +1,60 @@
+refinement {
+  crystal_symmetry {
+    unit_cell = 34.297 45.552 99.035 90 90 90
+    space_group = P 21 21 21
+  }
+  input {
+    pdb {
+      file_name = "reference_data/7LVC.pdb"
+    }
+    xray_data {
+      file_name = "merge/dhfr_0.mtz"
+      labels = F,SigF
+      r_free_flags {
+        generate = True
+      }
+    }
+    monomers {
+      file_name = "reference_data/CSD.cif"
+      file_name = "reference_data/FOL.cif"
+      file_name = "reference_data/NAP.cif"
+    }
+    symmetry_safety_check = error *warning
+  }
+  output {
+    prefix = """phenix_refine/DHFR_Laue_refine"""
+    serial = 1
+    serial_format = "%d"
+    write_def_file = False
+  }
+  electron_density_maps {
+    map_coefficients {
+      map_type = 2mFo-DFc
+      mtz_label_amplitudes = 2FOFCWT
+      mtz_label_phases = PH2FOFCWT
+      fill_missing_f_obs = True
+    }
+    map_coefficients {
+      map_type = 2mFo-DFc
+      mtz_label_amplitudes = 2FOFCWT_no_fill
+      mtz_label_phases = PH2FOFCWT_no_fill
+    }
+    map_coefficients {
+      map_type = mFo-DFc
+      mtz_label_amplitudes = FOFCWT
+      mtz_label_phases = PHFOFCWT
+    }
+    map_coefficients {
+      map_type = anomalous
+      mtz_label_amplitudes = ANOM
+      mtz_label_phases = PHANOM
+    }
+  }
+  refine {
+    strategy = individual_sites individual_sites_real_space *rigid_body \
+               *individual_adp group_adp tls *occupancies group_anomalous
+  }
+  main {
+    number_of_macro_cycles = 5
+  }
+}
