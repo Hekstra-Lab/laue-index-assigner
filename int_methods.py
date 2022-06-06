@@ -102,12 +102,18 @@ def integrate(phil_file, experiments, indexed, predicted):
 
     # Create shoeboxes
     shoeboxes = []
+    curr_iset = indexed[0]['imageset_id']
+    img_data = experiments.imagesets()[curr_iset].get_raw_data(0)
+    img_data = np.array([data.as_numpy_array() for data in img_data])
     print("Creating shoeboxes for profile fitting")
     for i in trange(len(indexed)):
         x1, x2, y1, y2, z1, z2 = indexed[i]['bbox']
         sbox = Shoebox(indexed[i]['bbox']) 
-        img_data = experiments.imagesets()[indexed[i]['imageset_id']].get_raw_data(0)
-        img_data = np.array([data.as_numpy_array() for data in img_data])
+        _curr_iset = indexed[i]['imageset_id']
+        if _curr_iset != curr_iset:
+            curr_iset = _curr_iset
+            img_data = experiments.imagesets()[curr_iset].get_raw_data(0)
+            img_data = np.array([data.as_numpy_array() for data in img_data])
         refl_data = img_data[0, y1:y2, x1:x2].reshape((1, y2-y1, x2-x1)) # Assumes single-panel detector
         sbox.data = flex.float(np.ascontiguousarray(refl_data))
         sbox.background = flex.float(np.zeros_like(refl_data))
@@ -131,7 +137,14 @@ def integrate(phil_file, experiments, indexed, predicted):
         img_experiments = deepcopy(experiments)
         img_experiments.select_on_experiment_identifiers(list([expt_ids[0]]))
         img_experiments[0].identifier = expt_ids[0]
-        img_experiments[0].profile = Model.create_from_reflections(params, indexed.select(indexed['imageset_id'] == i), img_experiments[0].crystal, img_experiments[0].beam, img_experiments[0].detector)
+
+        img_experiments[0].profile = Model.create_from_reflections(
+            params.profile, 
+            indexed.select(indexed['imageset_id'] == i), 
+            img_experiments[0].crystal, 
+            img_experiments[0].beam, 
+            img_experiments[0].detector
+        )
         sigma_bs[i] = img_experiments[0].profile.to_dict()['sigma_b']
         sigma_ms[i] = img_experiments[0].profile.to_dict()['sigma_m']
         img_predicted.reset_ids()
