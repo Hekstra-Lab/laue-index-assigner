@@ -76,8 +76,6 @@ for img_num in trange(len(elist.imagesets())):
     preds = reflection_table.empty_standard(len(s1))
     del preds['intensity.prf.value']
     del preds['intensity.prf.variance']
-    del preds['intensity.sum.value']
-    del preds['intensity.sum.variance']
     del preds['lp']
     del preds['profile_correlation']
     
@@ -119,37 +117,26 @@ for img_num in trange(len(elist.imagesets())):
     # Append image predictions to dataset
     final_preds.extend(preds)
     
-    ## Plot image
-    #print('Plotting data.')
-    #cmap = plt.cm.get_cmap('viridis')
-    #plt.scatter(xobs, yobs, c='k', marker='x', s=8, alpha=0.9)
-    #plt.scatter(x, y, c=probs, cmap=cmap, s=2, alpha=1)
-    #plt.colorbar()
-    #plt.xlabel('x (mm)')
-    #plt.ylabel('y (mm)')
-    #plt.title('Predicted vs observed centroids')
-    #plt.legend(labels=['Predicted', 'Observed'])
-    #plt.show()
-    #
-    #cmap = plt.cm.get_cmap('viridis')
-    #plt.scatter(xobs, yobs, c='k', marker='x', s=8, alpha=0.9)
-    #plt.scatter(x_sel, y_sel, c=probs_sel, cmap=cmap, s=2, alpha=1)
-    #plt.colorbar()
-    #plt.xlabel('x (mm)')
-    #plt.ylabel('y (mm)')
-    #plt.title('Filtered Predicted vs observed centroids')
-    #plt.legend(labels=['Predicted', 'Observed'])
-    #plt.show()
-    #
-    #cutoffs = np.linspace(min(probs), max(probs), 100)
-    #accepted = np.zeros(len(cutoffs))
-    #for i,j in enumerate(cutoffs):   
-    #    accepted[i] = sum(probs >= j)
-    #plt.scatter(cutoffs, accepted, s=2, c='k')
-    #plt.xlabel('cutoff prob. density')
-    #plt.ylabel('# accepted spots')
-    #plt.show()
-    
-    # Write data
+# Populate intensities of strong spots
+print('Populating strong spot info.')
+idpred, idstrong  = final_preds.match_by_hkle(refls)
+strongs = np.zeros(len(final_preds), dtype=int)
+strongs[idpred] = 1
+final_preds['strong'] = flex.int(strongs)
+for i in trange(len(idstrong)):
+    final_preds['intensity.sum.value'][idpred[i]] = refls['intensity.sum.value'][idstrong[i]]
+    final_preds['intensity.sum.variance'][idpred[i]] = refls['intensity.sum.variance'][idstrong[i]]
+    final_preds['xyzobs.mm.value'][idpred[i]] = refls['xyzobs.mm.value'][idstrong[i]]
+    final_preds['xyzobs.mm.variance'][idpred[i]] = refls['xyzobs.mm.variance'][idstrong[i]]
+    final_preds['xyzobs.px.value'][idpred[i]] = refls['xyzobs.px.value'][idstrong[i]]
+    final_preds['xyzobs.px.variance'][idpred[i]] = refls['xyzobs.px.variance'][idstrong[i]]  
 
+# Populate 'px' variety of predicted centroids BASED ON FLAT RECTANGULAR DETECTOR
+x, y, z = final_preds['xyzcal.mm'].parts()
+expt = elist[0] # assuming shared detector models
+x = x / expt.detector.to_dict()['panels'][0]['pixel_size'][0]
+y = y / expt.detector.to_dict()['panels'][0]['pixel_size'][1]
+final_preds['xyzcal.px'] = flex.vec3_double(x,y,z)
+
+# Write data    
 final_preds.as_file('dials_temp_files/predicted.refl')
