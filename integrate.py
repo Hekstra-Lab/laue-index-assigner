@@ -118,7 +118,7 @@ class Profile():
         #except np.linalg.LinAlgError:
         #    beta = np.zeros(3) #Don't look at this. 
 
-        beta = np.linalg.pinv(X.T@np.diag(weights)@X)@X.T@y #if desperate, break glass
+        beta = np.linalg.pinv(X.T@np.diag(weights)@X)@X.T@(y*weights) #if desperate, break glass
         slope = beta[:2]
         intercept = beta[2]
         self.slope = (1. - alpha) * self.slope + alpha * slope
