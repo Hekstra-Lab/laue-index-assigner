@@ -4,19 +4,13 @@ from matplotlib import pyplot as plt
 from dials.array_family import flex
 from scipy.spatial import KDTree
 from dxtbx.model.experiment_list import ExperimentList
-from scipy.stats import multivariate_normal,poisson,norm
 from matplotlib.patches import Ellipse
 from matplotlib.transforms import Affine2D
 
 refl_file = 'dials_temp_files/predicted.refl'
-expt_file = 'dials_temp_files/imported.expt'
+expt_file = 'dials_temp_files/mega_ultra_refined.expt'
 refls = flex.reflection_table.from_file(refl_file)
 elist = ExperimentList.from_file(expt_file)
-
-imageset_id = 46
-isigi_cutoff = 2. #i over sigma cutoff for strong spots profiles
-all_spots = refls.select(refls['imageset_id'] == imageset_id)['xyzcal.px'].as_numpy_array()[:,:2].astype('float32')
-pixels = elist.imagesets()[0].get_raw_data(imageset_id)[0].as_numpy_array().astype('float32')
 
 class Profile():
     def __init__(self, x, y, counts, cen_x=None, cen_y=None, fg_cutoff=1.0, bg_cutoff=3., minfrac=0.10, eps=1e-5, frac_step_size=0.50):
@@ -88,7 +82,7 @@ class Profile():
             bg_cutoff = self.bg_cutoff
 
         dx = self.difference_vectors
-        Z = np.sqrt(np.squeeze(dx[...,None,:]@np.linalg.inv(self.scale)@dx[...,:,None]))
+        Z = np.sqrt(np.squeeze(dx[...,None,:]@np.linalg.pinv(self.scale)@dx[...,:,None]))
 
         self.fg_mask = Z <= fg_cutoff
         self.bg_mask = Z >= bg_cutoff
@@ -267,10 +261,66 @@ class SegmentedImage():
                 ellipse.set_transform(transf + ax.transData)
                 ax.add_patch(ellipse)
 
-sim = SegmentedImage(pixels, all_spots)
-sim.integrate(isigi_cutoff)
-sim.plot_profiles()
-plt.show()
+def get_refls_image(refls, img_id):
+    return refls.select(refls['id'] == img_id)
 
-# TODO: Make this into an mtz
+def integrate_image(img_set, refls):
+    isigi_cutoff = 2. #i over sigma cutoff for strong spots profiles
+    all_spots = refls['xyzcal.px'].as_numpy_array()[:,:2].astype('float32')
+    pixels = img_set.get_raw_data(0)[0].as_numpy_array().astype('float32')
+    sim = SegmentedImage(pixels, all_spots)
+    sim.integrate(isigi_cutoff)
 
+# Get reflections and image data
+from functools import partial
+imagesets = elist.imagesets()
+ids = list(np.unique(refls['id']).astype(np.int32))
+get_refls = partial(get_refls_image, refls)
+tables = list(map(get_refls, ids))
+inputs = list(zip(imagesets, tables))
+
+# Multiprocess integration
+from multiprocessing import Pool
+num_processes = 8
+print('Starting integration')
+with Pool(processes=num_processes) as pool:
+    pool.starmap(integrate_image, inputs)
+print('Integration finished.')
+
+# TODO: Iterate over images
+
+## TODO: Make this into an mtz
+#""" Make an MTZ file from DIALS expt and refl files + profiling/integration for scaling/merging."""
+## Get miller indices
+#h = refls["miller_index"].as_vec3_double()
+#
+## Get a gemmi cell TODO: Get unit cell -- might be worth writing code to make a barebones version of mega_ultra_refined.expt
+#cell = np.zeros(6)
+#for crystal in elist.crystals():
+#    cell += np.array(crystal.get_unit_cell().parameters())/len(elist.crystals())
+#cell = gemmi.UnitCell(*cell)
+#
+## Get a spacegroup
+#sginfo = 0 # TODO: Extract spacegroup from a crystal object (maybe dont use imported.expt for this?)
+#symbol = sgtbx.space_group_symbols(sginfo.symbol_and_number().split('(')[0]) 
+#spacegroup = gemmi.SpaceGroup(symbol.universal_hermann_mauguin())
+#
+## TODO: the subset of reflections actually profiled above need to be selected
+#data = rs.DataSet({
+#  'H' : h.as_numpy_array()[:,0].astype(np.int32),
+#  'K' : h.as_numpy_array()[:,1].astype(np.int32),
+#  'L' : h.as_numpy_array()[:,2].astype(np.int32),
+#  'BATCH' : refls['imageset_id'].as_numpy_array() + 1,
+#  'I' : refls['intensity.sum.value'].as_numpy_array(),
+#  'SIGI' : refls['intensity.sum.variance'].as_numpy_array()**0.5,
+#  'xobs' : refls['xyzobs.px.value'].as_numpy_array()[:,0],
+#  'yobs' : refls['xyzobs.px.value'].as_numpy_array()[:,1],
+#  'wavelength' : refls['wavelength'].as_numpy_array(),
+#  'BG' : refls['background.sum.value'].as_numpy_array(),
+#  'SIGBG' : refls['background.sum.variance'].as_numpy_array()**0.5
+#}, cell=cell, spacegroup=spacegroup).infer_mtz_dtypes()
+#master_data = rs.concat((data, master_data), check_isomorphous=False)
+#
+## Write MTZ
+#master_data.write_mtz(f'unmerged.mtz', skip_problem_mtztypes=True)
+#
