@@ -4,8 +4,11 @@ from matplotlib import pyplot as plt
 from dials.array_family import flex
 from scipy.spatial import KDTree
 from dxtbx.model.experiment_list import ExperimentList
+from cctbx import sgtbx
 from matplotlib.patches import Ellipse
 from matplotlib.transforms import Affine2D
+import reciprocalspaceship as rs
+import gemmi
 
 refl_file = 'dials_temp_files/predicted.refl'
 expt_file = 'dials_temp_files/mega_ultra_refined.expt'
@@ -172,6 +175,10 @@ class SegmentedImage():
         self.loc = np.stack([(p.cen_x , p.cen_y) for p in self.profiles]) 
     
         g = self.data.groupby('label')
+        idx = np.unique(self.data.label)
+        idy = np.arange(len(centroids))
+        idx = np.isin(idy, idx)
+        self.used_reflections = idx
         self.bboxes = np.column_stack([
             g.min().x,
             g.max().x+1,
@@ -213,6 +220,7 @@ class SegmentedImage():
             )
         self.scale = np.stack([p.scale for p in self.profiles])
         self.loc = np.stack([(p.cen_x , p.cen_y) for p in self.profiles]) 
+        return strong_idx # To update reflection table
 
 
     def plot_image(self, **kwargs):
@@ -269,7 +277,29 @@ def integrate_image(img_set, refls):
     all_spots = refls['xyzcal.px'].as_numpy_array()[:,:2].astype('float32')
     pixels = img_set.get_raw_data(0)[0].as_numpy_array().astype('float32')
     sim = SegmentedImage(pixels, all_spots)
-    sim.integrate(isigi_cutoff)
+    # Get integrated reflections only
+    refls = refls.select(flex.bool(sim.used_reflections))
+    idx = sim.integrate(isigi_cutoff)
+    idy = np.arange(len(refls))
+    idx = np.isin(idy, idx)
+    refls = refls.select(flex.bool(idx))
+    # Update reflection data
+    i = np.zeros(len(refls))
+    sigi = np.zeros(len(refls))
+    bg = np.zeros(len(refls))
+    sigbg = np.zeros(len(refls))
+    profiles = sim.profiles[idx].to_list()
+    for j in range(len(refls)):
+        prof = profiles[j]
+        i[j] = prof.I
+        sigi[j] = prof.SigI
+        bg[j] = (prof.background * prof.bg_mask).sum()
+        sigbg[j] = np.sqrt((prof.background * prof.bg_mask)).sum()
+    refls['intensity.sum.value'] = flex.double(i)
+    refls['intensity.sum.variance'] = flex.double(sigi**2)
+    refls['background.sum.value'] = flex.double(bg)
+    refls['background.sum.variance'] = flex.double(sigbg**2)
+    return refls # Updated reflection table
 
 # Get reflections and image data
 from functools import partial
@@ -284,43 +314,44 @@ from multiprocessing import Pool
 num_processes = 8
 print('Starting integration')
 with Pool(processes=num_processes) as pool:
-    pool.starmap(integrate_image, inputs)
+    refls_arr = pool.starmap(integrate_image, inputs)
 print('Integration finished.')
 
-# TODO: Iterate over images
+# Construct an integrated reflection table
+final_refls = flex.reflection_table()
+for refls in refls_arr:                       
+    final_refls.extend(refls)
+refls = final_refls
 
-## TODO: Make this into an mtz
-#""" Make an MTZ file from DIALS expt and refl files + profiling/integration for scaling/merging."""
-## Get miller indices
-#h = refls["miller_index"].as_vec3_double()
-#
-## Get a gemmi cell TODO: Get unit cell -- might be worth writing code to make a barebones version of mega_ultra_refined.expt
-#cell = np.zeros(6)
-#for crystal in elist.crystals():
-#    cell += np.array(crystal.get_unit_cell().parameters())/len(elist.crystals())
-#cell = gemmi.UnitCell(*cell)
-#
-## Get a spacegroup
-#sginfo = 0 # TODO: Extract spacegroup from a crystal object (maybe dont use imported.expt for this?)
-#symbol = sgtbx.space_group_symbols(sginfo.symbol_and_number().split('(')[0]) 
-#spacegroup = gemmi.SpaceGroup(symbol.universal_hermann_mauguin())
-#
-## TODO: the subset of reflections actually profiled above need to be selected
-#data = rs.DataSet({
-#  'H' : h.as_numpy_array()[:,0].astype(np.int32),
-#  'K' : h.as_numpy_array()[:,1].astype(np.int32),
-#  'L' : h.as_numpy_array()[:,2].astype(np.int32),
-#  'BATCH' : refls['imageset_id'].as_numpy_array() + 1,
-#  'I' : refls['intensity.sum.value'].as_numpy_array(),
-#  'SIGI' : refls['intensity.sum.variance'].as_numpy_array()**0.5,
-#  'xobs' : refls['xyzobs.px.value'].as_numpy_array()[:,0],
-#  'yobs' : refls['xyzobs.px.value'].as_numpy_array()[:,1],
-#  'wavelength' : refls['wavelength'].as_numpy_array(),
-#  'BG' : refls['background.sum.value'].as_numpy_array(),
-#  'SIGBG' : refls['background.sum.variance'].as_numpy_array()**0.5
-#}, cell=cell, spacegroup=spacegroup).infer_mtz_dtypes()
-#master_data = rs.concat((data, master_data), check_isomorphous=False)
-#
-## Write MTZ
-#master_data.write_mtz(f'unmerged.mtz', skip_problem_mtztypes=True)
-#
+""" Make an MTZ file from DIALS expt and refl files + 
+profiling/integration for scaling/merging."""
+# Get miller indices
+h = refls["miller_index"].as_vec3_double()
+
+# Get a gemmi cell 
+cell = np.zeros(6)
+for crystal in elist.crystals():
+    cell += np.array(crystal.get_unit_cell().parameters())/len(elist.crystals())
+cell = gemmi.UnitCell(*cell)
+
+# Get a spacegroup
+sginfo = elist.crystals()[0].get_space_group().info()
+symbol = sgtbx.space_group_symbols(sginfo.symbol_and_number().split('(')[0]) 
+spacegroup = gemmi.SpaceGroup(symbol.universal_hermann_mauguin())
+
+data = rs.DataSet({
+  'H' : h.as_numpy_array()[:,0].astype(np.int32),
+  'K' : h.as_numpy_array()[:,1].astype(np.int32),
+  'L' : h.as_numpy_array()[:,2].astype(np.int32),
+  'BATCH' : refls['imageset_id'].as_numpy_array() + 1,
+  'I' : refls['intensity.sum.value'].as_numpy_array(),
+  'SIGI' : refls['intensity.sum.variance'].as_numpy_array()**0.5,
+  'xcal' : refls['xyzcal.px'].as_numpy_array()[:,0],
+  'ycal' : refls['xyzcal.px'].as_numpy_array()[:,1],
+  'wavelength' : refls['wavelength'].as_numpy_array(),
+  'BG' : refls['background.sum.value'].as_numpy_array(),
+  'SIGBG' : refls['background.sum.variance'].as_numpy_array()**0.5
+}, cell=cell, spacegroup=spacegroup).infer_mtz_dtypes()
+
+# Write MTZ
+data.write_mtz(f'integrated.mtz', skip_problem_mtztypes=True)
