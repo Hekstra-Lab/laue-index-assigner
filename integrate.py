@@ -85,7 +85,12 @@ class Profile():
             bg_cutoff = self.bg_cutoff
 
         dx = self.difference_vectors
-        Z = np.sqrt(np.squeeze(dx[...,None,:]@np.linalg.pinv(self.scale)@dx[...,:,None]))
+        try:
+            Z = np.sqrt(np.squeeze(dx[...,None,:]@np.linalg.pinv(self.scale)@dx[...,:,None]))
+        except:
+            print("SVD failed to converge. Mask could not be updated.")
+            self.success = False
+            return
 
         self.fg_mask = Z <= fg_cutoff
         self.bg_mask = Z >= bg_cutoff
@@ -94,10 +99,15 @@ class Profile():
         minpix = np.round(len(self.counts) * self.minfrac).astype('int')
         zorder = np.argsort(Z)
 
-        self.fg_mask[zorder[:minpix]] = True
-        self.bg_mask[zorder[:minpix]] = False
-        self.bg_mask[zorder[-minpix:]] = True
-        self.fg_mask[zorder[-minpix:]] = False
+        try:
+            self.fg_mask[zorder[:minpix]] = True
+            self.bg_mask[zorder[:minpix]] = False
+            self.bg_mask[zorder[-minpix:]] = True
+            self.fg_mask[zorder[-minpix:]] = False
+        except:
+            print("Spot has 1 or fewer pixels.")
+            self.success = False
+            return
 
     def update_background_plane(self, alpha=0.9):
         y = self.counts
@@ -279,6 +289,7 @@ def integrate_image(img_set, refls):
     sim = SegmentedImage(pixels, all_spots)
     # Get integrated reflections only
     refls = refls.select(flex.bool(sim.used_reflections))
+    print("Integrating image")
     idx = sim.integrate(isigi_cutoff)
     idy = np.arange(len(refls))
     idx = np.isin(idy, idx)
@@ -291,14 +302,16 @@ def integrate_image(img_set, refls):
     profiles = sim.profiles[idx].to_list()
     for j in range(len(refls)):
         prof = profiles[j]
-        i[j] = prof.I
-        sigi[j] = prof.SigI
-        bg[j] = (prof.background * prof.bg_mask).sum()
-        sigbg[j] = np.sqrt((prof.background * prof.bg_mask)).sum()
+        if prof.success:
+            i[j] = prof.I
+            sigi[j] = prof.SigI
+            bg[j] = (prof.background * prof.bg_mask).sum()
+            sigbg[j] = np.sqrt((prof.background * prof.bg_mask)).sum()
     refls['intensity.sum.value'] = flex.double(i)
     refls['intensity.sum.variance'] = flex.double(sigi**2)
     refls['background.sum.value'] = flex.double(bg)
     refls['background.sum.variance'] = flex.double(sigbg**2)
+    refls = refls.select(refls['intensity.sum.value'] != 0)
     return refls # Updated reflection table
 
 # Get reflections and image data
@@ -311,7 +324,7 @@ inputs = list(zip(imagesets, tables))
 
 # Multiprocess integration
 from multiprocessing import Pool
-num_processes = 8
+num_processes = 12
 print('Starting integration')
 with Pool(processes=num_processes) as pool:
     refls_arr = pool.starmap(integrate_image, inputs)
