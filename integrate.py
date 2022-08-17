@@ -305,8 +305,8 @@ def integrate_image(img_set, refls):
         if prof.success:
             i[j] = prof.I
             sigi[j] = prof.SigI
-            bg[j] = (prof.background * prof.bg_mask).sum()
-            sigbg[j] = np.sqrt((prof.background * prof.bg_mask)).sum()
+            bg[j] = np.maximum((prof.background * prof.bg_mask), 0.).sum()
+            sigbg[j] = np.sqrt(np.maximum((prof.background * prof.bg_mask), 0.)).sum()
     refls['intensity.sum.value'] = flex.double(i)
     refls['intensity.sum.variance'] = flex.double(sigi**2)
     refls['background.sum.value'] = flex.double(bg)
