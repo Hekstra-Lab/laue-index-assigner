@@ -290,10 +290,7 @@ def integrate_image(img_set, refls):
     # Get integrated reflections only
     refls = refls.select(flex.bool(sim.used_reflections))
     print("Integrating image")
-    idx = sim.integrate(isigi_cutoff)
-    idy = np.arange(len(refls))
-    idx = np.isin(idy, idx)
-    refls = refls.select(flex.bool(idx))
+    sim.integrate(isigi_cutoff)
     # Update reflection data
     i = np.zeros(len(refls))
     sigi = np.zeros(len(refls))
