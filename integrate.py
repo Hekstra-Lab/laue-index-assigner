@@ -296,7 +296,7 @@ def integrate_image(img_set, refls):
     sigi = np.zeros(len(refls))
     bg = np.zeros(len(refls))
     sigbg = np.zeros(len(refls))
-    profiles = sim.profiles[idx].to_list()
+    profiles = sim.profiles.to_list()
     for j in range(len(refls)):
         prof = profiles[j]
         if prof.success:
