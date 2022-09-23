@@ -6,6 +6,8 @@ OSCILLATION=4
 SPACE_GROUP_NUMBER=20
 CELL='"87.897,94.559,96.265,90.000,90.000,90.000"'
 
+USE_SLURM=1
+
 mkdir $OUT_DIR
 
 bash scan_varying_indexer.sh ${OUT_DIR} ${DIFF_IMG_DIR} ${IMG_PREFIX} ${OSCILLATION} ${SPACE_GROUP_NUMBER} ${CELL}
@@ -15,6 +17,13 @@ cctbx.python assign_beams_to_stills.py ${OUT_DIR}/optimized.expt ${OUT_DIR}/opti
 bash refine_initial.sh multi.expt multi.refl ultra_refined ${OUT_DIR}
 bash refine_remove_outliers.sh ultra_refined.expt ultra_refined.refl mega_ultra_refined ${OUT_DIR}
 cctbx.python poly_predictor.py ${OUT_DIR}
-cctbx.python integrate.py ${OUT_DIR}
-cctbx.python int_test.py ${OUT_DIR}
-cctbx.python stills2mtz.py ${OUT_DIR}
+
+if [ $USE_SLURM -eq 1 ]
+then
+  sbatch integrate_launch.sh ${OUT_DIR}
+  sbatch int_test_launch.sh ${OUT_DIR}
+else
+  cctbx.python integrate.py ${OUT_DIR}
+  cctbx.python int_test.py ${OUT_DIR}
+  cctbx.python stills2mtz.py ${OUT_DIR}
+fi
