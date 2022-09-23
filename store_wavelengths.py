@@ -8,10 +8,11 @@ from dxtbx.model.experiment_list import ExperimentListFactory
 from dials.array_family.flex import reflection_table
 from dials.array_family import flex
 from tqdm import tqdm, trange
+import sys
 
 # Parse arguments for filenames
-expt_file = 'dials_temp_files/mega_ultra_refined.expt'
-refl_file = 'dials_temp_files/mega_ultra_refined.refl'
+expt_file = f'{sys.argv[1]}/mega_ultra_refined.expt'
+refl_file = f'{sys.argv[1]}/mega_ultra_refined.refl'
 
 # Load DIALS files
 elist = ExperimentListFactory.from_json_file(expt_file, check_format=False)

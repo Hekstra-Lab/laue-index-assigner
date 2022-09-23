@@ -9,7 +9,7 @@ CELL='"87.897,94.559,96.265,90.000,90.000,90.000"'
 mkdir $OUT_DIR
 
 bash scan_varying_indexer.sh ${OUT_DIR} ${DIFF_IMG_DIR} ${IMG_PREFIX} ${OSCILLATION} ${SPACE_GROUP_NUMBER} ${CELL}
-cctbx.python sequence_to_stills_no_sb.py ${OUT_DIR}/refined_varying.*
+cctbx.python sequence_to_stills_no_sb.py output.experiments=${OUT_DIR}/stills_no_sb.expt output.reflections=${OUT_DIR}/stills_no_sb.refl ${OUT_DIR}/refined_varying.*
 cctbx.python dials_assign.py ${OUT_DIR}
 cctbx.python assign_beams_to_stills.py ${OUT_DIR}/optimized.expt ${OUT_DIR}/optimized.refl ${OUT_DIR}/multi
 bash refine_initial.sh multi.expt multi.refl ultra_refined ${OUT_DIR}

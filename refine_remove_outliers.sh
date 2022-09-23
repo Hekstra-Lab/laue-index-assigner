@@ -29,4 +29,4 @@ dials.refine -v -v  ${FILE_INPUT_TEMPLATE}${1} ${FILE_INPUT_TEMPLATE}${2} \
 #  refinement.reflections.outlier.mcd.threshold_probability=0.99 \
 #  refinement.reflections.outlier.algorithm='null' \
 
-cctbx.python store_wavelengths.py
+cctbx.python store_wavelengths.py $4
