@@ -5,5 +5,3 @@ integration.profile.gaussian_rs.centroid_definition=s1
 integration.summation.detector_gain=0.45
 integration.debug.separate_files=False
 integration.debug.output=True
-integration.lookup.mask=dials_temp_files/pixels.mask
-

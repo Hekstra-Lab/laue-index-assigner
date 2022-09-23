@@ -9,3 +9,5 @@ __pycache__/
 *.html
 e080_raw_data/*
 config_params.txt
+before_organization/*
+logs/*

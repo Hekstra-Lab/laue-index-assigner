@@ -10,9 +10,10 @@ FILE_OUTPUT_TEMPLATE="${REL_PATH}/${1}/"
 EXPECTED_WAVELENGTH=1.04
 PIXEL_SIZE="(0.08854,0.08854)"
 TUKEY_MULTIPLIER=0.
-MASK=0
-if test -f "${REL_PATH}/${1}/pixels.mask"; then
-    MASK=1
+MASK=1
+if [ $7 -eq 0 ]
+then
+    MASK=0
 fi
 
 dials.import geometry.scan.oscillation=0,$4 \
@@ -26,7 +27,7 @@ dials.import geometry.scan.oscillation=0,$4 \
 if [ $MASK == 1 ]; then
     dials.find_spots "${FILE_OUTPUT_TEMPLATE}imported.expt" \
         nproc=12 \
-        spotfinder.lookup.mask="${REL_PATH}/${1}/pixels.mask" \
+        spotfinder.lookup.mask="${REL_PATH}/${1}/${7}" \
         spotfinder.threshold.dispersion.gain=0.10 \
         spotfinder.force_2d=True \
         max_separation=10 \
