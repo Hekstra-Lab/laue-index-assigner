@@ -14,7 +14,6 @@ CELL='"87.897,94.559,96.265,90.000,90.000,90.000"'
 PIXEL_MASK=0
 
 USE_SLURM_FOR_INTEGRATION=1
-CARELESS=0
 # End user-defined parameters
 ############################################################################
 
@@ -43,11 +42,4 @@ else
   cctbx.python integrate.py ${OUT_DIR}
   cctbx.python int_test.py ${OUT_DIR}
   cctbx.python stills2mtz.py ${OUT_DIR}
-fi
-
-if [ $CARELESS -eq 1 ]
-then
-  conda activate careless
-  sbatch run_careless_from_integrate.sh ${OUT_DIR}
-  sbatch run_careless_from_int_test.sh ${OUT_DIR}
 fi
