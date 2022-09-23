@@ -4,21 +4,18 @@
 REL_PATH="$PWD"
 
 # Parameters
-FILE_INPUT_TEMPLATE="${DIFF_IMG_DIR}/e080_###.mccd" # Env variable set by config.sh
-FILE_OUTPUT_TEMPLATE="${REL_PATH}/dials_temp_files/"
+FILE_INPUT_TEMPLATE="${2}/${3}###.mccd" # Env variables set by config.sh
+FILE_OUTPUT_TEMPLATE="${REL_PATH}/${1}/"
 # EXPECTED_WAVELENGTH=1.070490100011937
 EXPECTED_WAVELENGTH=1.04
-OSCILLATION=1
-SPACE_GROUP_NUMBER=19
-CELL='"34,45,99,90,90,90"'
 PIXEL_SIZE="(0.08854,0.08854)"
 TUKEY_MULTIPLIER=0.
 MASK=0
-if test -f "${REL_PATH}/dials_temp_files/pixels.mask"; then
+if test -f "${REL_PATH}/${1}/pixels.mask"; then
     MASK=1
 fi
 
-dials.import geometry.scan.oscillation=0,$OSCILLATION \
+dials.import geometry.scan.oscillation=0,$4 \
     geometry.goniometer.axes=0,1,0 \
     geometry.beam.wavelength=$EXPECTED_WAVELENGTH \
     geometry.detector.panel.pixel_size=$PIXEL_SIZE \
@@ -29,7 +26,7 @@ dials.import geometry.scan.oscillation=0,$OSCILLATION \
 if [ $MASK == 1 ]; then
     dials.find_spots "${FILE_OUTPUT_TEMPLATE}imported.expt" \
         nproc=12 \
-        spotfinder.lookup.mask="${REL_PATH}/dials_temp_files/pixels.mask" \
+        spotfinder.lookup.mask="${REL_PATH}/${1}/pixels.mask" \
         spotfinder.threshold.dispersion.gain=0.10 \
         spotfinder.force_2d=True \
         max_separation=10 \
@@ -50,8 +47,8 @@ else
 fi
 
 dials.index "${FILE_OUTPUT_TEMPLATE}imported.expt" "${FILE_OUTPUT_TEMPLATE}strong.refl" \
-    space_group=$SPACE_GROUP_NUMBER \
-    unit_cell=$CELL \
+    space_group=$5 \
+    unit_cell=$6 \
     indexing.refinement_protocol.n_macro_cycles=10 \
     refinement.parameterisation.goniometer.fix=None \
     refinement.parameterisation.beam.fix=all \

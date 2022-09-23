@@ -10,9 +10,10 @@ import reciprocalspaceship as rs
 import pandas as pd
 import gemmi
 import re
+import sys
 
-expt_files = ["dials_temp_files/integrated.expt",]
-refl_files = ["dials_temp_files/integrated.refl",]
+expt_files = [f"{sys.argv[1]}/integrated_from_int_test.expt",]
+refl_files = [f"{sys.argv[1]}/integrated_from_int_test.refl",]
 
 def make_annotated_mtz(exptFN, reflFN):
     """ Make an MTZ file from DIALS expt and refl files for scaling/merging."""
@@ -62,5 +63,5 @@ for i, (expt,refl) in enumerate(zip(expt_files, refl_files)):
         ds['BATCH'] = ds['BATCH'] + data['BATCH'].max()
     data = rs.concat((ds, data), check_isomorphous=False)
 
-data.write_mtz(f'unmerged.mtz', skip_problem_mtztypes=True)
+data.write_mtz(f"{sys.argv[1]}/integrated_from_int_test.mtz", skip_problem_mtztypes=True)
 

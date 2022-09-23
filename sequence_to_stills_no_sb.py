@@ -6,7 +6,7 @@ Example:
   dials.sequence_to_stills sequence.expt sequence.refl
 """
 
-
+import sys
 import logging
 
 from dxtbx.model import MosaicCrystalSauter2014
@@ -25,32 +25,31 @@ from dials.util.options import OptionParser, reflections_and_experiments_from_fi
 
 logger = logging.getLogger("dials.command_line.sequence_to_stills")
 
-# The phil scope
+   # The phil scope
 phil_scope = parse(
     """
 output {
-  experiments = ./dials_temp_files/stills_no_sb.expt
+experiments = ./dummy/stills_no_sb.expt
     .type = str
     .help = "Filename for the experimental models that have been converted to stills"
-  reflections = ./dials_temp_files/stills_no_sb.refl
+reflections = ./dummy/stills_no_sb.refl
     .type = str
     .help = "Filename for the reflection tables with split shoeboxes (3D to 2D)"
-  domain_size_ang = None
+domain_size_ang = None
     .type = float
     .help = "Override for domain size. If None, use the crystal's domain size, if"
             "available"
-  half_mosaicity_deg = None
+half_mosaicity_deg = None
     .type = float
     .help = "Override for mosaic angle. If None, use the crystal's mosaic angle, if"
             "available"
 }
 max_scan_points = None
-  .type = int
-  .expert_level = 2
-  .help = Limit number of scan points
+.type = int
+.expert_level = 2
+.help = Limit number of scan points
 """
 )
-
 
 def sequence_to_stills(experiments, reflections, params):
     assert len(reflections) == 1
@@ -180,6 +179,8 @@ def run(args=None, phil=phil_scope):
         args: The command line arguments to use. Defaults to sys.argv[1:]
         phil: The phil_scope. Defaults to the master phil_scope for this program
     """
+
+
     # The script usage
     usage = "usage: dials.sequence_to_stills [options] [param.phil] models.expt reflections.refl"
 

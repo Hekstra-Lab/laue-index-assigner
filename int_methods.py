@@ -139,7 +139,7 @@ def integrate(phil_file, experiments, indexed, predicted):
         img_experiments[0].identifier = expt_ids[0]
 
         img_experiments[0].profile = Model.create_from_reflections(
-            params, 
+            params.profile, 
             indexed.select(indexed['imageset_id'] == i), 
             img_experiments[0].crystal, 
             img_experiments[0].beam, 

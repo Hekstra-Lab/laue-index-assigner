@@ -11,10 +11,11 @@ import scipy
 from gen_lam_func import gen_kde
 from tqdm import tqdm, trange
 from IPython import embed
+import sys
 
 # Load DIALS files
-expt_file = "dials_temp_files/mega_ultra_refined.expt"
-refl_file = "dials_temp_files/mega_ultra_refined.refl"
+expt_file = f"{sys.argv[1]}/mega_ultra_refined.expt"
+refl_file = f"{sys.argv[1]}/mega_ultra_refined.refl"
 
 # Get data
 print('Loading DIALS files.')
@@ -139,4 +140,4 @@ y = y / expt.detector.to_dict()['panels'][0]['pixel_size'][1]
 final_preds['xyzcal.px'] = flex.vec3_double(x,y,z)
 
 # Write data    
-final_preds.as_file('dials_temp_files/predicted.refl')
+final_preds.as_file(f"{sys.argv[1]}/predicted.refl")

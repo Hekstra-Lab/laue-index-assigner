@@ -9,12 +9,13 @@ import logging
 from tqdm import tqdm, trange
 from utils.refl_table_utils import gen_experiment_identifiers
 from IPython import embed
+import sys
 
 #logging.basicConfig(level=logging.DEBUG)
 print("Load DIALS files")
-elist = ExperimentListFactory.from_json_file("dials_temp_files/mega_ultra_refined.expt", check_format=True)
-refls = flex.reflection_table.from_file("dials_temp_files/mega_ultra_refined.refl")
-preds = flex.reflection_table.from_file("dials_temp_files/predicted.refl")
+elist = ExperimentListFactory.from_json_file(f"{sys.argv[1]}/mega_ultra_refined.expt", check_format=True)
+refls = flex.reflection_table.from_file(f"{sys.argv[1]}/mega_ultra_refined.refl")
+preds = flex.reflection_table.from_file(f"{sys.argv[1]}/predicted.refl")
 phil_file = "proc_sigb.phil"
 
 # Get only refined reflections
@@ -53,9 +54,9 @@ print("Integrating reflections")
 new_elist, new_refls = int_methods.integrate(phil_file, elist, refls, preds)
 
 print("Writing experiment data.")
-new_elist.as_file('dials_temp_files/integrated.expt')
+new_elist.as_file(f"{sys.argv[1]}/integrated_from_int_test.expt")
 
 print("Writing reflection data.")
-new_refls.as_file('dials_temp_files/integrated.refl')
+new_refls.as_file(f"{sys.argv[1]}/integrated_from_int_test.refl")
 
 print("Finished!")

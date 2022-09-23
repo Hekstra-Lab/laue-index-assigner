@@ -1,6 +1,6 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-FILE_INPUT_TEMPLATE="${SCRIPT_DIR}/dials_temp_files/"
-FILE_OUTPUT_TEMPLATE="${SCRIPT_DIR}/dials_temp_files/"
+FILE_INPUT_TEMPLATE="${SCRIPT_DIR}/${4}/"
+FILE_OUTPUT_TEMPLATE="${SCRIPT_DIR}/${4}/"
 TUKEY_MULTIPLIER=0.
 # 1 unit cell axis is fixed in precognition (b-axis) (maybe tolerance for detector distance -- look into this)
 # det. dist./wavelength/unit cell axes (fix 2/3)

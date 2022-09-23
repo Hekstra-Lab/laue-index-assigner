@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import reciprocalspaceship as rs
 import argparse
+import sys
 
 # Get I/O options from user
 parser = argparse.ArgumentParser()

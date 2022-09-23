@@ -8,6 +8,7 @@ from dials.array_family.flex import reflection_table
 from dials.array_family import flex
 from cctbx.sgtbx import space_group
 from cctbx.uctbx import unit_cell
+import sys
 
 # Hyperparameters for indexer
 macro_cycles = 3
@@ -16,13 +17,13 @@ lam_max = 1.15
 d_min = 1.4
 rlp_radius = 0.002
 n_steps = 10
-new_expt_filename = 'dials_temp_files/optimized.expt'
-new_refl_filename = 'dials_temp_files/optimized.refl'
+new_expt_filename = f'{sys.argv[1]}/optimized.expt'
+new_refl_filename = f'{sys.argv[1]}/optimized.refl'
 
 # Load DIALS files
 print('Loading DIALS files')
-expt_file = "dials_temp_files/stills_no_sb.expt"
-refl_file = "dials_temp_files/stills_no_sb.refl"
+expt_file = f'{sys.argv[1]}/stills_no_sb.expt'
+refl_file = f'{sys.argv[1]}/stills_no_sb.refl'
 
 elist = ExperimentListFactory.from_json_file(expt_file, check_format=False)
 refls = reflection_table.from_file(refl_file)

@@ -9,9 +9,10 @@ from matplotlib.patches import Ellipse
 from matplotlib.transforms import Affine2D
 import reciprocalspaceship as rs
 import gemmi
+import sys
 
-refl_file = 'dials_temp_files/predicted.refl'
-expt_file = 'dials_temp_files/mega_ultra_refined.expt'
+refl_file = f'{sys.argv[1]}/predicted.refl'
+expt_file = f'{sys.argv[1]}/mega_ultra_refined.expt'
 refls = flex.reflection_table.from_file(refl_file)
 elist = ExperimentList.from_file(expt_file)
 
@@ -364,4 +365,4 @@ data = rs.DataSet({
 }, cell=cell, spacegroup=spacegroup).infer_mtz_dtypes()
 
 # Write MTZ
-data.write_mtz(f'integrated.mtz', skip_problem_mtztypes=True)
+data.write_mtz(f"{sys.argv[1]}/integrated_from_integrate.mtz", skip_problem_mtztypes=True)
