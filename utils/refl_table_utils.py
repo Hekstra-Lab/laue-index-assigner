@@ -5,10 +5,10 @@ from dials.array_family.flex import reflection_table
 from dials.array_family import flex
 from IPython import embed
 
-expt_file = "dials_temp_files/mega_ultra_refined.expt"
-refl_file = "dials_temp_files/mega_ultra_refined.refl"
-elist = ExperimentListFactory.from_json_file(expt_file, check_format=False)
-refls = reflection_table.from_file(refl_file)
+# expt_file = "dials_temp_files/mega_ultra_refined.expt"
+# refl_file = "dials_temp_files/mega_ultra_refined.refl"
+# elist = ExperimentListFactory.from_json_file(expt_file, check_format=False)
+# refls = reflection_table.from_file(refl_file)
 
 def gen_experiment_identifiers(refls, elist):
     """Generates a mapping of the ID column in a reflection table 
