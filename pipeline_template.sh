@@ -1,3 +1,8 @@
+############################################################################
+# User-defined parameters
+DIALS_PATH=''
+INSTALL_RS=0
+
 DIFF_IMG_DIR='/n/holyscratch01/hekstra_lab/brookner/lauescr/hsDHFR/images/'
 IMG_PREFIX='e011e_off_'
 OUT_DIR='dials_files_182_362'
@@ -7,6 +12,15 @@ SPACE_GROUP_NUMBER=20
 CELL='"87.897,94.559,96.265,90.000,90.000,90.000"'
 
 USE_SLURM=1
+# End user-defined parameters
+############################################################################
+
+source $DIALS_PATH
+
+if [ $INSTALL_RS -eq 1 ]
+then
+  cctbx.python -m pip install reciprocalspaceship
+fi
 
 mkdir $OUT_DIR
 
