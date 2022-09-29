@@ -1,5 +1,6 @@
-data/*
+reference_data/*
 dials_*/*
+careless*/*
 __pycache__/
 *.expt
 *.refl
@@ -7,7 +8,9 @@ __pycache__/
 *.out
 *.err
 *.html
+sigma*
 e080_raw_data/*
 config_params.txt
 before_organization/*
 logs/*
+*/pixels.mask
