@@ -19,8 +19,8 @@ refl_filename = args.in_refl
 centroid_max_distance = 10.
 
 print('reading DIALS files')
-elist = ExperimentListFactory.from_json_file(expt_file)
-refls = reflection_table.from_file(refl_file)
+elist = ExperimentListFactory.from_json_file(expt_filename)
+refls = reflection_table.from_file(refl_filename)
 refls_in = refls.select(refls.get_flags(refls.flags.used_in_refinement)) # Inliers
 refls_out = refls.select(~refls.get_flags(refls.flags.used_in_refinement)) # Outliers
 
