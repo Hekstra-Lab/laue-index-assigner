@@ -9,12 +9,22 @@ import logging
 from tqdm import tqdm, trange
 from utils.refl_table_utils import gen_experiment_identifiers
 from IPython import embed
+import argparse
+
+# Get I/O options from user
+parser = argparse.ArgumentParser()
+parser.add_argument('in_expt', help='Input experiment file.', default='dials_temp_files/mega_ultra_refined.expt')
+parser.add_argument('in_refl', help='Input reflection file.', default='dials_temp_files/mega_ultra_refined.refl')
+parser.add_argument('in_pred', help='Input prediction file.', default='dials_temp_files/predicted.refl')
+parser.add_argument('out_expt', help='Output experiment file.', default='dials_temp_files/integrated_dials.expt')
+parser.add_argument('out_refl', help='Output reflection file.', default='dials_temp_files/integrated_dials.refl')
+args = parser.parse_args()
 
 #logging.basicConfig(level=logging.DEBUG)
 print("Load DIALS files")
-elist = ExperimentListFactory.from_json_file("dials_temp_files/mega_ultra_refined.expt", check_format=True)
-refls = flex.reflection_table.from_file("dials_temp_files/mega_ultra_refined.refl")
-preds = flex.reflection_table.from_file("dials_temp_files/predicted.refl")
+elist = ExperimentListFactory.from_json_file(args.in_expt, check_format=True)
+refls = flex.reflection_table.from_file(args.in_refl)
+preds = flex.reflection_table.from_file(args.in_pred)
 phil_file = "proc_sigb.phil"
 
 # Get only refined reflections
@@ -53,9 +63,9 @@ print("Integrating reflections")
 new_elist, new_refls = int_methods.integrate(phil_file, elist, refls, preds)
 
 print("Writing experiment data.")
-new_elist.as_file('dials_temp_files/integrated.expt')
+new_elist.as_file(args.out_expt)
 
 print("Writing reflection data.")
-new_refls.as_file('dials_temp_files/integrated.refl')
+new_refls.as_file(args.out_refl)
 
 print("Finished!")
