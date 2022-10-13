@@ -370,7 +370,6 @@ class LaueAssigner():
         Hall = Hall[idx]
         qall = qall[idx]
 
-        #wav_all  = -2.*(self.s0 * qall).sum(-1) / (qall*qall).sum(-1)
 
         dmat = rs.utils.angle_between(self.qobs[...,None,:], qall[None,...,:])
         cost = dmat
@@ -379,15 +378,16 @@ class LaueAssigner():
         _,idx = linear_sum_assignment(cost)
         H   = Hall[idx]
         qpred = qall[idx]
-        #wav = wav_all[idx]
         harmonics = harmonics[idx]
 
         # Set all attributes to match the current assignment
         self.set_H(H)
-        #self.set_wav(wav)
         self.set_qpred(qpred)
         self.set_harmonics(harmonics)
-        self.set_wav(np.linalg.norm(self.qobs, axis=-1) / np.linalg.norm(self.qpred, axis=-1))
+
+        #wav_pred = -2.*(self.s0 * qpred).sum(-1) / (qpred*qpred).sum(-1)
+        wav_obs = np.linalg.norm(self.qobs, axis=-1) / np.linalg.norm(self.qpred, axis=-1)
+        self.set_wav(wav_obs)
 
     def update_rotation(self):
         """ Update the rotation matrix (self.R) based on the inlying refls """
