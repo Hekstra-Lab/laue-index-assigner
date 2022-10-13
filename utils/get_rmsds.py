@@ -22,8 +22,8 @@ def get_rmsds(refls, refined=True):
     rmsds = np.zeros(shape=(len(img_ids), 3))
     for img in img_ids:
         img_df = df.loc[df['imageset_id'] == img]
-        xy  = df[['X', 'Y']].to_numpy(float)
-        xy_pred  = df[['Xpred', 'Ypred']].to_numpy(float)
+        xy  = img_df[['X', 'Y']].to_numpy(float)
+        xy_pred  = img_df[['Xpred', 'Ypred']].to_numpy(float)
 
         # Get residuals
         x_resids = xy_pred[:,0] - xy[:,0]
