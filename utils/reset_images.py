@@ -55,3 +55,19 @@ new_refls = refls.select(flex.bool(idz))
 print('Writing data')
 new_expts.as_file('dials_temp_files/shrunk.expt')
 new_refls.as_file('dials_temp_files/shrunk.refl')
+
+for i in trange(3048):
+  expt_filename = f'split{i:06}.expt'
+  refl_filename = f'split{i:06}.refl'
+  expts = ExperimentListFactory.from_json_file(expt_filename)
+  refls = flex.reflection_table().from_file(refl_filename)
+  min_id = int(expts.identifiers()[0])
+  min_img_id = int(np.min(refls['imageset_id'].as_numpy_array()))
+  for j in range(len(expts)):
+    expts[j].identifier = str(j)
+  idx = refls['id'].as_numpy_array() - min_id
+  refls['id'] = flex.int(idx)
+  idy = refls['imageset_id'].as_numpy_array() - min_img_id
+  refls['imageset_id'] = flex.int(idy)
+  expts.as_file(f'/n/home04/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/split_images/split{i:06}.expt')
+  refls.as_file(f'/n/home04/rahewitt/laue_indexer/laue-index-assigner/dials_temp_files/split_images/split{i:06}.refl')
