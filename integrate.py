@@ -9,11 +9,19 @@ from matplotlib.patches import Ellipse
 from matplotlib.transforms import Affine2D
 import reciprocalspaceship as rs
 import gemmi
+import argparse
 
-refl_file = 'dials_temp_files/predicted.refl'
-expt_file = 'dials_temp_files/mega_ultra_refined.expt'
-refls = flex.reflection_table.from_file(refl_file)
+# Get I/O options from user                                                               
+parser = argparse.ArgumentParser()                                                        
+parser.add_argument('in_expt', help='Input experiment file.', default='dials_temp_files/mega_ultra_refined.expt')
+parser.add_argument('in_pred', help='Input prediction file.', default='dials_temp_files/predicted.refl')
+parser.add_argument('out_mtz', help='Output mtz file.', default='dials_temp_files/integrated.mtz')
+args = parser.parse_args()
+
+expt_file = args.in_expt
+refl_file = args.in_pred
 elist = ExperimentList.from_file(expt_file)
+refls = flex.reflection_table.from_file(refl_file)
 
 class Profile():
     def __init__(self, x, y, counts, cen_x=None, cen_y=None, fg_cutoff=1.0, bg_cutoff=3., minfrac=0.10, eps=1e-5, frac_step_size=0.50):
@@ -364,4 +372,4 @@ data = rs.DataSet({
 }, cell=cell, spacegroup=spacegroup).infer_mtz_dtypes()
 
 # Write MTZ
-data.write_mtz(f'integrated.mtz', skip_problem_mtztypes=True)
+data.write_mtz(args.out_mtz, skip_problem_mtztypes=True)
