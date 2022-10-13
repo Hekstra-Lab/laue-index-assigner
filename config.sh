@@ -6,7 +6,7 @@ if [ ! -d 'dials_temp_files' ]; then
 fi
 
 # Get user input on what to do
-read -p $'Enter the number for what you want to do.\n\t 1. Set the raw data directory.\n\t 2. Shrink the imageset for a pair of expt, refl files.\n\t 3. Archive the current analysis files.\n' OPTION
+read -p $'Enter the number for what you want to do.\n\t 1. Set the raw data directory.\n\t 2. Shrink the imageset for a pair of expt, refl files.\n\t 3. Archive the current analysis files.\n\t 4. Split a pair of expt, refl files into a a series of expt, refl files per image.\n' OPTION
 
 # Option 1: Set raw data directory
 if [ "$OPTION" == "1"  ]; then
@@ -25,6 +25,12 @@ elif [ "$OPTION" = "3" ]; then
   read -p $'Enter the directory you\'d like to save the tarball to:\n' -e TARPATH
   read -p $'Enter a short description for the dataset: \n' DESC
   bash utils/archive_analysis.sh $DESC $TARPATH
+
+# Option 4: Split the imageset for a pair of expt, refl files
+elif [ "$OPTION" = "4" ]; then
+  read -p $'Enter the experiment filename: ' -e EXPT
+  read -p $'Enter the reflection filename: ' -e REFL
+  cctbx.python utils/split_by_image.py $EXPT $REFL
 
 # Invalid option
 else
