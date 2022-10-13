@@ -3,7 +3,6 @@ from dxtbx.model import ExperimentList
 from dxtbx.model.experiment_list import ExperimentListFactory
 from dials.array_family.flex import reflection_table
 from dials.array_family import flex
-from IPython import embed
 
 expt_file = "dials_temp_files/mega_ultra_refined.expt"
 refl_file = "dials_temp_files/mega_ultra_refined.refl"
