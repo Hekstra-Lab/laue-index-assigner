@@ -11,10 +11,18 @@ import scipy
 from gen_lam_func import gen_kde
 from tqdm import tqdm, trange
 from IPython import embed
+import argparse
+
+# Get I/O options from user                                                                                      
+parser = argparse.ArgumentParser()                                                                               
+parser.add_argument('in_expt', help='Input experiment file.', default='dials_temp_files/mega_ultra_refined.expt')
+parser.add_argument('in_refl', help='Input reflection file.', default='dials_temp_files/mega_ultra_refined.refl')
+parser.add_argument('out_pred', help='Output prediction file.', default='dials_temp_files/predicted.refl')         
+args = parser.parse_args()
 
 # Load DIALS files
-expt_file = "dials_temp_files/mega_ultra_refined.expt"
-refl_file = "dials_temp_files/mega_ultra_refined.refl"
+expt_file = args.in_expt
+refl_file = args.in_refl
 
 # Get data
 print('Loading DIALS files.')
@@ -139,4 +147,4 @@ y = y / expt.detector.to_dict()['panels'][0]['pixel_size'][1]
 final_preds['xyzcal.px'] = flex.vec3_double(x,y,z)
 
 # Write data    
-final_preds.as_file('dials_temp_files/predicted.refl')
+final_preds.as_file(args.out_pred)
