@@ -1,5 +1,5 @@
 out=merge
-mtz=unmerged.mtz
+mtz=integrated.mtz
 mkdir $out
 
 BASE_ARGS=(
@@ -16,5 +16,3 @@ careless poly \
   ${BASE_ARGS[@]} \
   $mtz \
   $out/dhfr
-
-
