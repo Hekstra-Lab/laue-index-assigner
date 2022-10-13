@@ -62,5 +62,5 @@ for i, (expt,refl) in enumerate(zip(expt_files, refl_files)):
         ds['BATCH'] = ds['BATCH'] + data['BATCH'].max()
     data = rs.concat((ds, data), check_isomorphous=False)
 
-data.write_mtz(f'unmerged.mtz', skip_problem_mtztypes=True)
+data.write_mtz(f'integrated.mtz', skip_problem_mtztypes=True)
 
