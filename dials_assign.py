@@ -107,4 +107,5 @@ elist.as_file(new_expt_filename)
 
 # Write out reflection file
 print('Writing reflection data.')
+refls = refls.select(refls['Wavelength'] != 0) # Remove unindexed reflections
 refls.as_file(new_refl_filename)
