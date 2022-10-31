@@ -42,8 +42,12 @@ def get_rmsds(refls, refined=True):
         refls['xyzobs.px.value'].parts()[1].as_numpy_array(),
         refls['xyzcal.px'].parts()[0].as_numpy_array(),
         refls['xyzcal.px'].parts()[1].as_numpy_array(),
-        refls['imageset_id'].as_numpy_array()]).T,
-        columns = ['X','Y','Xpred','Ypred','imageset_id'])
+        refls['miller_index'].as_vec3_double().parts()[0].as_numpy_array(),
+        refls['miller_index'].as_vec3_double().parts()[1].as_numpy_array(),
+        refls['miller_index'].as_vec3_double().parts()[2].as_numpy_array(),
+        refls['imageset_id'].as_numpy_array(),
+        refls.get_flags(refls.flags.used_in_refinement)]).T,
+        columns = ['X','Y','Xpred','Ypred','H','K','L','imageset_id', 'inlier'])
 
     # Iterate over images to get RMSDs  
     img_ids = np.unique(df['imageset_id'].to_numpy(int))
@@ -107,11 +111,51 @@ def plot_resids_by_image(refls, refined=True, density=True, image=-1):
         plt.xlabel('X Residuals (px)')
         plt.ylabel('Y Residuals (px)')
         plt.show()
+ 
+        inliers = img_df['inlier'].to_numpy(bool)
+        outliers = np.logical_not(inliers)
+        plt.scatter(resids[0, :][outliers], resids[1, :][outliers], c='red')
+        plt.scatter(resids[0, :][inliers], resids[1, :][inliers], c='green')
+        plt.title('Residuals Colored by Outlier Rejection')
+        plt.xlabel('X Residuals (px)')
+        plt.ylabel('Y Residuals (px)')
+        plt.legend(['Outlier','Inlier'])
+        plt.show()
+
         if density:
             import seaborn as sns
-            sns.kdeplot(resids[2, :], x=resids[0, :], y=resids[1, :])
+            quantiles = np.logspace(-10, 0, num=11)
+            sns.kdeplot(resids[2, :], x=resids[0, :], y=resids[1, :], levels=quantiles)
             plt.xlabel('X Residuals (px)')
             plt.ylabel('Y Residuals (px)')
             plt.title(f'X,Y Residuals Density Plot for Image {image}')
             plt.show()
             
+def miller_intersection(refls_list):                                                                                                                 
+    """Get the intersection of all reflection tables according to Miller indices, and output the reflection tables truncated to that intersection."""
+    # Dependencies
+    from functools import reduce
+
+    # Extract data from reflection tables in lists                                                                                                   
+    df_list = []                                                                                                                                     
+    for refls in refls_list:                                                                                                                         
+        df = pd.DataFrame(data =
+        np.asarray([refls['xyzobs.px.value'].parts()[0].as_numpy_array(),
+            refls['xyzobs.px.value'].parts()[1].as_numpy_array(),
+            refls['xyzcal.px'].parts()[0].as_numpy_array(),
+            refls['xyzcal.px'].parts()[1].as_numpy_array(),
+            refls['miller_index'].as_vec3_double().parts()[0].as_numpy_array(),
+            refls['miller_index'].as_vec3_double().parts()[1].as_numpy_array(),
+            refls['miller_index'].as_vec3_double().parts()[2].as_numpy_array(),
+            refls['imageset_id'].as_numpy_array()]).T,
+            columns = ['X','Y','Xpred','Ypred','H','K','L','imageset_id'])
+        df_list.append(df)
+
+    # Reset column names
+    for i, df in enumerate(df_list, start=1):                                                     
+        df.rename(columns={col:'{}_{}'.format(col, i) for col in ('X', 'Y', 'Xpred', 'Ypred')}, inplace=True)
+
+    # Merge data
+    df_common = reduce( lambda left,right: pd.merge(left, right, on=['H','K','L','imageset_id'], how='inner'), df_list)
+    return df_common
+
