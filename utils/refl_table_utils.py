@@ -122,6 +122,14 @@ def plot_resids_by_image(refls, refined=True, density=True, image=-1):
         plt.legend(['Outlier','Inlier'])
         plt.show()
 
+        plt.scatter(img_df['X'][outliers], img_df['Y'][outliers], c='red')
+        plt.scatter(img_df['X'][inliers], img_df['Y'][inliers], c='green')
+        plt.title('Observed Centroids Colored by Outlier Rejection')
+        plt.xlabel('X (px)')
+        plt.ylabel('Y (px)')
+        plt.legend(['Outlier','Inlier'])
+        plt.show()
+
         if density:
             import seaborn as sns
             quantiles = np.logspace(-10, 0, num=11)
