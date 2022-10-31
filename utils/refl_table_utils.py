@@ -71,3 +71,39 @@ def get_rmsds(refls, refined=True):
     # Return data to user
     return df, rmsds
 
+def plot_resids_by_image(refls, refined=True, image=-1):
+    """Plot X, Y, Total residuals over images. A valid image number adds a 2D histogram of X,Y residuals for that image."""
+    # Dependencies
+    from matplotlib import pyplot as plt
+
+    # Extract data from reflection table
+    df, rmsds = get_rmsds(refls, refined=refined)
+    imgs = np.unique(df['imageset_id'])
+
+    # Plot data
+    fig, axs = plt.subplots(3)
+    axs[0].plot(imgs, rmsds[:, 0], 'r')
+    axs[0].set(ylabel='X RMSD (px)')
+    axs[1].plot(imgs, rmsds[:, 1], 'b')
+    axs[1].set(ylabel='Y RMSD (px)')
+    axs[2].plot(imgs, rmsds[:, 2], 'm')
+    axs[2].set(xlabel='Image')
+    axs[2].set(ylabel='Total RMSD (px)')
+    fig.suptitle('Centroid RMSDs per Image')
+    plt.show()
+
+    if image >= 0:
+        if not (image in imgs):
+            print(f'Invalid image number. This reflection table has images {int(min(imgs))} to {int(max(imgs))}.')
+            return
+        img_df = df[df['imageset_id'] == image]
+        resids = np.zeros(shape=(2, len(img_df)))
+        resids[0, :] = (img_df['X'] - img_df['Xpred']).to_numpy(float)
+        resids[1, :] = (img_df['Y'] - img_df['Ypred']).to_numpy(float)
+        plt.hist2d(resids[0, :], resids[1, :], bins=len(img_df)//10)
+        plt.colorbar()
+        plt.title(f'X,Y Residuals for Image {image}')
+        plt.xlabel('X Residuals (px)')
+        plt.ylabel('Y Residuals (px)')
+        plt.show()
+    
