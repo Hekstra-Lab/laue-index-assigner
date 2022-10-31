@@ -71,8 +71,8 @@ def get_rmsds(refls, refined=True):
     # Return data to user
     return df, rmsds
 
-def plot_resids_by_image(refls, refined=True, image=-1):
-    """Plot X, Y, Total residuals over images. A valid image number adds a 2D histogram of X,Y residuals for that image."""
+def plot_resids_by_image(refls, refined=True, density=True, image=-1):
+    """Plot X, Y, Total residuals over images. A valid image number adds a 2D histogram of X,Y residuals for that image. A KDE is used to generate a density plot if required."""
     # Dependencies
     from matplotlib import pyplot as plt
 
@@ -97,13 +97,21 @@ def plot_resids_by_image(refls, refined=True, image=-1):
             print(f'Invalid image number. This reflection table has images {int(min(imgs))} to {int(max(imgs))}.')
             return
         img_df = df[df['imageset_id'] == image]
-        resids = np.zeros(shape=(2, len(img_df)))
+        resids = np.zeros(shape=(3, len(img_df)))
         resids[0, :] = (img_df['X'] - img_df['Xpred']).to_numpy(float)
         resids[1, :] = (img_df['Y'] - img_df['Ypred']).to_numpy(float)
+        resids[2, :] = np.sqrt(resids[1, :]**2 + resids[0, :]**2)
         plt.hist2d(resids[0, :], resids[1, :], bins=len(img_df)//10)
         plt.colorbar()
         plt.title(f'X,Y Residuals for Image {image}')
         plt.xlabel('X Residuals (px)')
         plt.ylabel('Y Residuals (px)')
         plt.show()
-    
+        if density:
+            import seaborn as sns
+            sns.kdeplot(resids[2, :], x=resids[0, :], y=resids[1, :])
+            plt.xlabel('X Residuals (px)')
+            plt.ylabel('Y Residuals (px)')
+            plt.title(f'X,Y Residuals Density Plot for Image {image}')
+            plt.show()
+            
