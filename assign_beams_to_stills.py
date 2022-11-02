@@ -1,6 +1,7 @@
 from dials.array_family import flex
 from dxtbx.model.experiment_list import ExperimentListFactory
 from dxtbx.model import ExperimentList
+from dials.algorithms.refinement.prediction.managed_predictors import ExperimentsPredictorFactory
 from copy import deepcopy
 from tqdm import tqdm, trange
 import numpy as np
@@ -66,6 +67,11 @@ print('finished loop')
 idx = flex.int(dials_df['new_ID'])
 refl_output["id"] = idx
 print('assigned IDs')
+
+# Repredict centroids
+print('Repredicting centroids')
+ref_predictor = ExperimentsPredictorFactory.from_experiments(new_expts)
+ref_predictor(refl_output)
 
 print('writing experiments')
 # Write experiment file with multiple beams
