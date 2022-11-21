@@ -30,11 +30,18 @@ def gen_experiment_identifiers(refls, elist):
 
     return refls
 
-def get_rmsds(refls, refined=True):
+def get_rmsds(refls, refined=True, custom_inliers=None):
     """Extracts some key data columns and gives returns a pandas table of the data, along with an array of RMSDs per image in a numpy array of format (x,y,total)."""
     # Use subset of reflection table if appropriate
     if refined:
-        refls = refls.select(refls.get_flags(refls.flags.used_in_refinement))
+        inliers = refls.select(refls.get_flags(refls.flags.used_in_refinement))
+    
+    if custom_inliers is not None:
+        if len(custom_inliers) != len(refls):
+            print('Error: Custom inliers array not equal to reflection table length.')
+            return 
+        inliers = custom_inliers
+
 
     # Extract data from reflection table
     df = pd.DataFrame(data =
@@ -46,7 +53,7 @@ def get_rmsds(refls, refined=True):
         refls['miller_index'].as_vec3_double().parts()[1].as_numpy_array(),
         refls['miller_index'].as_vec3_double().parts()[2].as_numpy_array(),
         refls['imageset_id'].as_numpy_array(),
-        refls.get_flags(refls.flags.used_in_refinement)]).T,
+        inliers]).T,
         columns = ['X','Y','Xpred','Ypred','H','K','L','imageset_id', 'inlier'])
 
     # Iterate over images to get RMSDs  
@@ -75,13 +82,13 @@ def get_rmsds(refls, refined=True):
     # Return data to user
     return df, rmsds
 
-def plot_resids_by_image(refls, refined=True, density=True, image=-1):
+def plot_resids_by_image(refls, refined=True, density=True, image=-1, custom_inliers=None):
     """Plot X, Y, Total residuals over images. A valid image number adds a 2D histogram of X,Y residuals for that image. A KDE is used to generate a density plot if required."""
     # Dependencies
     from matplotlib import pyplot as plt
 
     # Extract data from reflection table
-    df, rmsds = get_rmsds(refls, refined=refined)
+    df, rmsds = get_rmsds(refls, refined=refined, custom_inliers=custom_inliers)
     imgs = np.unique(df['imageset_id'])
 
     # Plot data
@@ -145,8 +152,8 @@ def miller_intersection(refls_list):
     from functools import reduce
 
     # Extract data from reflection tables in lists                                                                                                   
-    df_list = []                                                                                                                                     
-    for refls in refls_list:                                                                                                                         
+    df_list = []
+    for refls in refls_list:
         df = pd.DataFrame(data =
         np.asarray([refls['xyzobs.px.value'].parts()[0].as_numpy_array(),
             refls['xyzobs.px.value'].parts()[1].as_numpy_array(),
