@@ -2,6 +2,14 @@
 Python script to generate input files for Precognition integration after running DIALS
 through geometry refinement. ALL SPACES HARDCODED DON'T TOUCH THEM. Hekstra lab use only --
 other uses will vary hardcoded items.
+
+arg1: directory containing input mega_ultra_refined files
+arg2: image prefix, e.g. e011e_off
+arg3: output directory
+arg4: image directory
+
+call used:
+cctbx.python precog_files/dials2precog.py dials_files_off_e e011e_off precog_integration_inputs_off_e /n/holyscratch01/hekstra_lab/brookner/lauescr/hsDHFR/images/
 """
 
 print('Importing libraries')
@@ -11,9 +19,10 @@ import gemmi
 from dxtbx.model.experiment_list import ExperimentListFactory
 from dials.array_family.flex import reflection_table
 from IPython import embed
+import sys
 
-expt_file = "dials_temp_files/ultra_refined.expt"
-refl_file = "dials_temp_files/ultra_refined.refl"
+expt_file = f"{sys.argv[1]}/mega_ultra_refined.expt"
+refl_file = f"{sys.argv[1]}/mega_ultra_refined.refl"
 
 # Read data in
 print('Reading DIALS experiments')
@@ -34,8 +43,9 @@ for i in tqdm(np.unique(refls['imageset_id'].as_numpy_array())):
     cryst = elist.crystals()[i]
 
     # Initialize output file
-    img_name = f'e080_{j:03}.mccd'
-    filename = f'test/{img_name}.inp'
+    img_name = f'{sys.argv[2]}_{j:03}.mccd'
+    img_path = f'{sys.argv[4]}/{img_name}'
+    filename = f'{sys.argv[3]}/{img_name}.inp'
     output = open(filename, 'w')
     
     # Get crystal line
@@ -84,7 +94,7 @@ for i in tqdm(np.unique(refls['imageset_id'].as_numpy_array())):
     bulge_line=f'   Bulge      0.0 0.0 0.0 0.0\n\n' # Hardcoded guess by dev
 
     # Get image line
-    image_line=f'   Image      {img_name}\n'
+    image_line=f'   Image      {img_path}\n'
 
     # Get resolution line
     res_img = resolutions[refls['imageset_id'].as_numpy_array() == i]
@@ -115,7 +125,7 @@ for i in tqdm(np.unique(refls['imageset_id'].as_numpy_array())):
 
 print('Writing .lam file')
 lam_lims = np.linspace(np.min(lams), np.max(lams), 11)
-filename = f'test/lambda.lam'
+filename = f'{sys.argv[3]}/lambda.lam'
 output = open(filename, 'w')
 for i in range(len(lam_lims)-1):
     lam_mid = (lam_lims[i] + lam_lims[i+1])/2
@@ -128,19 +138,20 @@ print('Estimating spot size')
 spot = [6, 6, 3]
 
 print('Writing integration script')
-filename = f'test/precog_integrate.inp'
+filename = f'{sys.argv[3]}/precog_integrate.inp'
 output = open(filename, 'w')
 output.write(f'diagnostic off\n')
 output.write(f'busy off\n')
 output.write(f'warning off\n')
 for i in np.unique(refls['imageset_id'].as_numpy_array()):
     j = i+1
-    output.write(f'@ e080_{j:03}.mccd.inp\n')
+    output.write(f'@ {sys.argv[2]}_{j:03}.mccd.inp\n')
 output.write(f'Input\n')
 output.write(f' Image lambda.lam\n')
 output.write(f' Spot {spot[0]} {spot[1]} {spot[2]}\n')
 output.write(f' Quit\n')
 output.write(f'Dataset linearAnalytical\n')
+output.write(f' In {sys.argv[4]}\n')
 output.write(f' Out integrated\n')
 output.write(f' Resolution {np.min(res_img)} {np.max(res_img)}\n')
 output.write(f' Wavelength {np.min(lams)} {np.max(lams)}\n')
