@@ -40,12 +40,12 @@ bash refine_initial.sh multi.expt multi.refl ultra_refined ${OUT_DIR}
 bash refine_remove_outliers.sh ultra_refined.expt ultra_refined.refl mega_ultra_refined ${OUT_DIR}
 cctbx.python poly_predictor.py ${OUT_DIR}
 
-# if [ $USE_SLURM_FOR_INTEGRATION -eq 1 ]
-# then
-#   sbatch integrate_launch.sh ${OUT_DIR} $DIALS_PATH
-#   sbatch int_test_launch.sh ${OUT_DIR} $DIALS_PATH
-# else
-#   cctbx.python integrate.py ${OUT_DIR}
-#   cctbx.python int_test.py ${OUT_DIR}
-#   cctbx.python stills2mtz.py ${OUT_DIR}
-# fi
+if [ $USE_SLURM_FOR_INTEGRATION -eq 1 ]
+then
+  sbatch integrate_launch.sh ${OUT_DIR} $DIALS_PATH
+  sbatch int_test_launch.sh ${OUT_DIR} $DIALS_PATH
+else
+  cctbx.python integrate.py ${OUT_DIR}
+  cctbx.python int_test.py ${OUT_DIR}
+  cctbx.python stills2mtz.py ${OUT_DIR}
+fi
