@@ -16,10 +16,13 @@ then
     MASK=0
 fi
 
+DET_DIST=$8
+
 dials.import geometry.scan.oscillation=0,$4 \
     geometry.goniometer.axes=0,1,0 \
     geometry.beam.wavelength=$EXPECTED_WAVELENGTH \
     geometry.detector.panel.pixel_size=$PIXEL_SIZE \
+    geometry.detector.distance=$DET_DIST \
     input.template=$FILE_INPUT_TEMPLATE \
     output.experiments="${FILE_OUTPUT_TEMPLATE}imported.expt" \
     output.log="${FILE_OUTPUT_TEMPLATE}dials.import.log"
