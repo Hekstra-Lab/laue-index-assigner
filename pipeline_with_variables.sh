@@ -6,10 +6,11 @@ INSTALL_RS=0
 
 DIFF_IMG_DIR='/n/holyscratch01/hekstra_lab/brookner/lauescr/hsDHFR/images/'
 FULL_SYMMETRY_SPACE_GROUP=20
-SPACE_GROUP_NUMBER=${4:-$FULL_SYMMETRY_SPACE_GROUP} # to maintain backward compatibility with scripts that don't provide a spacegroup
 CELL='"87.897,94.559,96.265,90.000,90.000,90.000"'
 
 PIXEL_MASK=0
+
+DET_DIST=225
 
 USE_SLURM_FOR_INTEGRATION=1
 # End user-defined global parameters
@@ -18,7 +19,7 @@ USE_SLURM_FOR_INTEGRATION=1
 IMG_PREFIX=$1 # e.g. 'e011e_off_'
 OUT_DIR=$2 # e.g. 'dials_files_off_e', or whatever naming convention you prefer
 OSCILLATION=$3 # The angle between consecutive images, in degrees
-DET_DIST=${5:-225}
+SPACE_GROUP_NUMBER=${4:-$FULL_SYMMETRY_SPACE_GROUP} # to maintain backward compatibility with scripts that don't provide a spacegroup
 # End user-defined variables to change for each run
 ############################################################################
 
