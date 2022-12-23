@@ -31,6 +31,7 @@
  - Launch your jobs by running the `pipeline_launch.sh` script (presumably via SBATCH) 
 
 ### Using `precognition` for integration
+**Note:** precog integration is fairly slow, and best wrapped into an sbatch script. Once could certainly imagine wrapping it into the above `pipeline_with_variables.sh` script if desired.
 In the `precog_files` directory, there is a script called `dials2precog.py`. This script can be used as follows:
 
 ```bash
