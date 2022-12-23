@@ -31,7 +31,8 @@
  - Launch your jobs by running the `pipeline_launch.sh` script (presumably via SBATCH) 
 
 ### Using `precognition` for integration
-**Note:** precog integration is fairly slow, and best wrapped into an sbatch script. Once could certainly imagine wrapping it into the above `pipeline_with_variables.sh` script if desired.
+**Note:** precog integration is fairly slow, and best wrapped into an sbatch script. Once could certainly imagine wrapping it into the above `pipeline_with_variables.sh` script if desired. 
+   
 In the `precog_files` directory, there is a script called `dials2precog.py`. This script can be used as follows:
 
 ```bash
@@ -47,7 +48,7 @@ So for example:
 ```bash
 cctbx.python precog_files/dials2precog.py dials_files_off_e e011e_off precog_integration_inputs_off_e /n/holyscratch01/hekstra_lab/brookner/lauescr/hsDHFR/images/
 ```
-and now, your output directory contains all the necessary files to call `precog precog_integrate.inp`. The last thing you will need to do is `mkdir integrated`, because this script wants to put the outputs in that directory, but won't create it if it doesn't exist.
+The last thing you will need to do is `mkdir integrated` inside of the output directory, because the integration script will want to put things in that subdirectory, but won't create it if it doesn't exist. With that, you're all set to source precog and call `precog precog_integrate.inp`. 
 
 The outputs from precog integration are `.ii` ("integrated intensity") files. `rsbooster` contains a convient utility for converting those files to an `.mtz`; call `rs.precog2mtz --help` for details. (`pip install rs-booster` if necessary!)
 
@@ -56,7 +57,7 @@ After running the above pipeline, you should have two sets of integrated reflect
 
 Note that unlike the above scripts, which must be run through your cctbx.python installation, careless can (and should) be run via a conda environment containing careless.
 
-The script `run_careless_p1_200ns_integrate_repeats.sh` should be somewhat useful as a template. Note that you must call the following lines (commented out in the integration script) directly in the terminal *before* you sbatch the integration script. Of course, replace `/n/hekstra_lab/people/brookner/miniconda3/etc/profile.d/conda.sh` with the location of your conda installation!
+The script `run_careless_p1_200ns_integrate_repeats.sh` should be somewhat useful as a template. Note that you must call the following lines (commented out in the integration script) directly in the terminal *before* you sbatch the integration script. Of course, replace the `/n/hekstra_lab/people/brookner/miniconda3/` part of the second and third lines with the location of your conda installation!
 ```bash
 module load cuda/11.1.0-fasrc01 cudnn/8.1.0.77_cuda11.2-fasrc01
 source /n/hekstra_lab/people/brookner/miniconda3/etc/profile.d/conda.sh
