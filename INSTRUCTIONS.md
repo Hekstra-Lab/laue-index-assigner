@@ -31,14 +31,36 @@
  - Launch your jobs by running the `pipeline_launch.sh` script (presumably via SBATCH) 
 
 ### Using `precognition` for integration
-tbd
+In the `precog_files` directory, there is a script called `dials2precog.py`. This script can be used as follows:
+
+```bash
+cctbx.python precog_files/dials2precog.py arg1 arg2 arg3 arg4
+```
+where:
+ - arg1: directory containing input mega_ultra_refined files
+ - arg2: image prefix, e.g. e011e_off
+ - arg3: output directory
+ - arg4: image directory
+
+So for example:
+```bash
+cctbx.python precog_files/dials2precog.py dials_files_off_e e011e_off precog_integration_inputs_off_e /n/holyscratch01/hekstra_lab/brookner/lauescr/hsDHFR/images/
+```
+and now, your output directory contains all the necessary files to call `precog precog_integrate.inp`. The last thing you will need to do is `mkdir integrated`, because this script wants to put the outputs in that directory, but won't create it if it doesn't exist.
+
+The outputs from precog integration are `.ii` ("integrated intensity") files. `rsbooster` contains a convient utility for converting those files to an `.mtz`; call `rs.precog2mtz --help` for details. (`pip install rs-booster` if necessary!)
 
 ### Instructions for careless:
-After running the above pipeline, you should have two sets of integrated reflections, integrated_from_integrate.mtz and integrated_from_int_test.mtz. An understanding of the difference between these (and which is better) is rapidly evolving
+After running the above pipeline, you should have two sets of integrated reflections, integrated_from_integrate.mtz and integrated_from_int_test.mtz (plus possibly a third via the precog integrator!). An understanding of the difference between these (and which is better) is rapidly evolving.
 
-Note that unlike the above scripts, which must be run through your cctbx.python installation, careless can be run via a conda environment containing careless.
+Note that unlike the above scripts, which must be run through your cctbx.python installation, careless can (and should) be run via a conda environment containing careless.
 
-The script `run_careless_p1_200ns_integrate_repeats.sh` should be somewhat useful as a template.
+The script `run_careless_p1_200ns_integrate_repeats.sh` should be somewhat useful as a template. Note that you must call the following lines (commented out in the integration script) directly in the terminal *before* you sbatch the integration script. Of course, replace `/n/hekstra_lab/people/brookner/miniconda3/etc/profile.d/conda.sh` with the location of your conda installation!
+```bash
+module load cuda/11.1.0-fasrc01 cudnn/8.1.0.77_cuda11.2-fasrc01
+source /n/hekstra_lab/people/brookner/miniconda3/etc/profile.d/conda.sh
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/n/hekstra_lab/people/brookner/miniconda3/lib/
+```
 
 ---
 Below here are Rick's previous instructions
