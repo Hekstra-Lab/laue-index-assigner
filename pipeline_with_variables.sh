@@ -1,16 +1,16 @@
 #!/bin/bash
 ############################################################################
 # User-defined global parameters
-DIALS_PATH='/n/hekstra_lab/people/brookner/dials-v3-11-1/dials_env.sh'
+DIALS_PATH='/n/home04/rahewitt/laue_indexer/dials'
 INSTALL_RS=0
 
-DIFF_IMG_DIR='/n/holyscratch01/hekstra_lab/brookner/lauescr/hsDHFR/images/'
-FULL_SYMMETRY_SPACE_GROUP=20
-CELL='"87.897,94.559,96.265,90.000,90.000,90.000"'
+DIFF_IMG_DIR='/n/home04/rahewitt/laue_indexer/laue-index-assigner/data/e080_raw_data'
+FULL_SYMMETRY_SPACE_GROUP=19
+CELL='"34,45,99,90.000,90.000,90.000"'
 
 PIXEL_MASK=0
 
-DET_DIST=225
+DET_DIST=200
 
 USE_SLURM_FOR_INTEGRATION=1
 # End user-defined global parameters
@@ -36,8 +36,8 @@ bash scan_varying_indexer.sh ${OUT_DIR} ${DIFF_IMG_DIR} ${IMG_PREFIX} ${OSCILLAT
 cctbx.python sequence_to_stills_no_sb.py output.experiments=${OUT_DIR}/stills_no_sb.expt output.reflections=${OUT_DIR}/stills_no_sb.refl ${OUT_DIR}/refined_varying.*
 cctbx.python dials_assign.py ${OUT_DIR}
 cctbx.python assign_beams_to_stills.py ${OUT_DIR}/optimized.expt ${OUT_DIR}/optimized.refl ${OUT_DIR}/multi
-bash refine_initial.sh multi.expt multi.refl ultra_refined ${OUT_DIR}
-bash refine_remove_outliers.sh ultra_refined.expt ultra_refined.refl mega_ultra_refined ${OUT_DIR}
+#bash refine_initial.sh multi.expt multi.refl ultra_refined ${OUT_DIR}
+bash refine_remove_outliers.sh multi.expt multi.refl mega_ultra_refined ${OUT_DIR}
 cctbx.python poly_predictor.py ${OUT_DIR}
 
 if [ $USE_SLURM_FOR_INTEGRATION -eq 1 ]
