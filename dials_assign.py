@@ -66,15 +66,15 @@ for i in trange(len(elist.imagesets())):
     # Optimize Miller indices
     la.assign()
     for j in range(macro_cycles):
+        la.reset_inliers()
         la.update_rotation()
         la.assign()
         la.reject_outliers()
+        la.update_rotation()
         la.assign()
-    la.reset_inliers()
-    la.assign()
 
-    # Recalculate s1 based on new wavelengths
-    s1 = la.s1 / la.wav[:,None]
+    # Update s1 based on new wavelengths
+    s1[la._inliers] = la.s1 / la.wav[:,None]
 
     # Reset crystal parameters based on new geometry
     cryst.set_U(la.R.flatten())
@@ -108,4 +108,5 @@ elist.as_file(new_expt_filename)
 
 # Write out reflection file
 print('Writing reflection data.')
+refls = refls.select(refls['Wavelength'] != 0) # Remove unindexed reflections
 refls.as_file(new_refl_filename)
