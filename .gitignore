@@ -1,6 +1,7 @@
 reference_data/*
 dials_*/*
-careless*/*
+*_dialsoutput/*
+*careless*/*
 __pycache__/
 *.expt
 *.refl
