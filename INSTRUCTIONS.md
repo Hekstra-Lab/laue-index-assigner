@@ -57,6 +57,8 @@ After running the above pipeline, you should have two sets of integrated reflect
 
 Note that unlike the above scripts, which must be run through your cctbx.python installation, careless can (and should) be run via a conda environment containing careless.
 
+Also, note the existence of the `concat_careless_inputs/concat_mtzs.py` script, which can help combine different "passes" into a single file for input to careless.
+
 The script `run_careless_p1_200ns_integrate_repeats.sh` should be somewhat useful as a template. Note that you must call the following lines (commented out in the careless script) directly in the terminal *before* you sbatch the integration script. Of course, replace the `/n/hekstra_lab/people/brookner/miniconda3/` part of the second and third lines with the location of your conda installation!
 ```bash
 module load cuda/11.1.0-fasrc01 cudnn/8.1.0.77_cuda11.2-fasrc01
