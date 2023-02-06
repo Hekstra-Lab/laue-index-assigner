@@ -4,11 +4,7 @@ from dxtbx.model import ExperimentList
 from dxtbx.model.experiment_list import ExperimentListFactory
 from dials.array_family.flex import reflection_table
 from dials.array_family import flex
-
-expt_file = "dials_temp_files/mega_ultra_refined.expt"
-refl_file = "dials_temp_files/mega_ultra_refined.refl"
-elist = ExperimentListFactory.from_json_file(expt_file, check_format=False)
-refls = reflection_table.from_file(refl_file)
+from tqdm import trange
 
 def gen_experiment_identifiers(refls, elist):
     """Generates a mapping of the ID column in a reflection table 
@@ -52,9 +48,9 @@ def get_rmsds(refls, refined=True, custom_inliers=None):
         refls['miller_index'].as_vec3_double().parts()[0].as_numpy_array(),
         refls['miller_index'].as_vec3_double().parts()[1].as_numpy_array(),
         refls['miller_index'].as_vec3_double().parts()[2].as_numpy_array(),
-        refls['imageset_id'].as_numpy_array(),
-        inliers]).T,
-        columns = ['X','Y','Xpred','Ypred','H','K','L','imageset_id', 'inlier'])
+        refls['imageset_id'].as_numpy_array()]).T,
+#        inliers]).T,
+        columns = ['X','Y','Xpred','Ypred','H','K','L','imageset_id'])#, 'inlier'])
 
     # Iterate over images to get RMSDs  
     img_ids = np.unique(df['imageset_id'].to_numpy(int))
@@ -90,16 +86,21 @@ def plot_resids_by_image(refls, refined=True, density=True, image=-1, custom_inl
     # Extract data from reflection table
     df, rmsds = get_rmsds(refls, refined=refined, custom_inliers=custom_inliers)
     imgs = np.unique(df['imageset_id'])
+    spot_counts = np.zeros(len(imgs))
+    for i in trange(len(spot_counts)):
+        spot_counts[i] = sum(df['imageset_id'] == i)
 
     # Plot data
-    fig, axs = plt.subplots(3)
+    fig, axs = plt.subplots(4)
     axs[0].plot(imgs, rmsds[:, 0], 'r')
     axs[0].set(ylabel='X RMSD (px)')
     axs[1].plot(imgs, rmsds[:, 1], 'b')
     axs[1].set(ylabel='Y RMSD (px)')
     axs[2].plot(imgs, rmsds[:, 2], 'm')
-    axs[2].set(xlabel='Image')
     axs[2].set(ylabel='Total RMSD (px)')
+    axs[3].plot(imgs, spot_counts, 'k')
+    axs[3].set(xlabel='Image')
+    axs[3].set(ylabel='Total Spots')
     fig.suptitle('Centroid RMSDs per Image')
     plt.show()
 
