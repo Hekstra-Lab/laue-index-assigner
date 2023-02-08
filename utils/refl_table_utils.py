@@ -6,6 +6,26 @@ from dials.array_family.flex import reflection_table
 from dials.array_family import flex
 from tqdm import trange
 
+def gen_experiment_identifiers(refls, elist):
+    """Generates a mapping of the ID column in a reflection table 
+    to the identifiers in an experiment list. The values of the ID
+    column in the reflection table are taken to be the indices of
+    the identifiers in order of the experiment list."""
+    # Delete old mapping
+    for k in refls.experiment_identifiers().keys():
+        del refls.experiment_identifiers()[k]
+
+    # Make arrays for keys and values
+    indices = refls['id'].as_numpy_array()
+    identifiers = np.empty_like(indices, dtype=np.dtype('U12'))
+
+    # Populate identifiers based on indices
+    for i, j in enumerate(indices):
+        identifiers[i] = str(j)
+        refls.experiment_identifiers()[int(j)] = identifiers[i]
+
+    return refls
+
 def get_rmsds(refls, refined=True, custom_inliers=None):
     """Extracts some key data columns and gives returns a pandas table of the data, along with an array of RMSDs per image in a numpy array of format (x,y,total)."""
     # Use subset of reflection table if appropriate
