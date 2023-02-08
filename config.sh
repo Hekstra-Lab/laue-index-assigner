@@ -6,11 +6,28 @@ if [ ! -d 'dials_temp_files' ]; then
 fi
 
 # Get user input on what to do
-read -p $'Enter the number for what you want to do.\n\t 1. Set the raw data directory.\n\t 2. Shrink the imageset for a pair of expt, refl files.\n\t 3. Archive the current analysis files.\n\t 4. Split a pair of expt, refl files into a a series of expt, refl files per image.\n' OPTION
+read -p $'Enter the number for what you want to do.\n\t 1. Change an environment variable.\n\t 2. Shrink the imageset for a pair of expt, refl files.\n\t 3. Archive the current analysis files.\n\t 4. Split a pair of expt, refl files into a a series of expt, refl files per image.\n' OPTION
 
-# Option 1: Set raw data directory
+# Option 1: Change an environment variable
 if [ "$OPTION" == "1"  ]; then
-  bash utils/raw_data.sh
+  # If configuration file exists, prompt user if they want to overwrite      
+  if test -f "config_params.txt"; then                                    
+    read -p $'A previous configuration exists. Delete? Enter [y/n].\n' DELETE
+    if [ "$DELETE" == "y" ]; then                                            
+      rm config_params.txt                                                
+      echo "File deleted. Please initialize a new configuration file to edit variables.\n"                                                 
+      exit                                                                   
+    else                                                                     
+      read -p $'Overwrite configuration file? Enter [y/n]\n' OVERWRITE       
+      if [ "OVERWRITE" == "y" ]; then                                        
+        # TODO: IMPLEMENT                                                    
+      else                                                                   
+        echo "Configuration cancelled. No files overwritten. Please archive the previous configuration in order to start a new one.\n"              
+        exit                                                                 
+      fi                                                                     
+    fi                                                                       
+  fi                                                                         
+  bash utils/update_variables.sh
 
 # Option 2: Shrink the imageset for a pair of expt, refl files
 elif [ "$OPTION" = "2" ]; then
