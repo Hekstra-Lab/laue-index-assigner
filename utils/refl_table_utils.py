@@ -28,29 +28,32 @@ def gen_experiment_identifiers(refls, elist):
 
 def get_rmsds(refls, refined=True, custom_inliers=None):
     """Extracts some key data columns and gives returns a pandas table of the data, along with an array of RMSDs per image in a numpy array of format (x,y,total)."""
-    # Use subset of reflection table if appropriate
-    if refined:
-        inliers = refls.select(refls.get_flags(refls.flags.used_in_refinement))
-    
-    if custom_inliers is not None:
-        if len(custom_inliers) != len(refls):
+    # Use subset of reflection table if appropriate                                   
+    inliers = None                                                                    
+    if refined:                                                                       
+        inliers = np.asarray(refls.get_flags(refls.flags.used_in_refinement))         
+                                                                                      
+    if custom_inliers is not None:                                                    
+        if len(custom_inliers) != len(refls):                                         
             print('Error: Custom inliers array not equal to reflection table length.')
-            return 
-        inliers = custom_inliers
+            return                                                                    
+        inliers = custom_inliers                                                      
+                                                                                      
+    if inliers is None:                                                               
+        inliers = np.ones(len(refls), dtype='bool')                                   
 
-
-    # Extract data from reflection table
-    df = pd.DataFrame(data =
-    np.asarray([refls['xyzobs.px.value'].parts()[0].as_numpy_array(),
-        refls['xyzobs.px.value'].parts()[1].as_numpy_array(),
-        refls['xyzcal.px'].parts()[0].as_numpy_array(),
-        refls['xyzcal.px'].parts()[1].as_numpy_array(),
-        refls['miller_index'].as_vec3_double().parts()[0].as_numpy_array(),
-        refls['miller_index'].as_vec3_double().parts()[1].as_numpy_array(),
-        refls['miller_index'].as_vec3_double().parts()[2].as_numpy_array(),
-        refls['imageset_id'].as_numpy_array()]).T,
-#        inliers]).T,
-        columns = ['X','Y','Xpred','Ypred','H','K','L','imageset_id'])#, 'inlier'])
+     # Extract data from reflection table                                         
+     df = pd.DataFrame(data = {                                                   
+         "X" : refls['xyzobs.px.value'].parts()[0].as_numpy_array(),              
+         "Y" : refls['xyzobs.px.value'].parts()[1].as_numpy_array(),              
+         "Xpred" : refls['xyzcal.px'].parts()[0].as_numpy_array(),                
+         "Ypred": refls['xyzcal.px'].parts()[1].as_numpy_array(),                 
+         "H" : refls['miller_index'].as_vec3_double().parts()[0].as_numpy_array(),
+         "K" : refls['miller_index'].as_vec3_double().parts()[1].as_numpy_array(),
+         "L" : refls['miller_index'].as_vec3_double().parts()[2].as_numpy_array(),
+         "imageset_id" : refls['imageset_id'].as_numpy_array(),                   
+         "inlier" : inliers,                                                      
+     })                                                                           
 
     # Iterate over images to get RMSDs  
     img_ids = np.unique(df['imageset_id'].to_numpy(int))
@@ -83,26 +86,32 @@ def plot_resids_by_image(refls, refined=True, density=True, image=-1, custom_inl
     # Dependencies
     from matplotlib import pyplot as plt
 
-    # Extract data from reflection table
-    df, rmsds = get_rmsds(refls, refined=refined, custom_inliers=custom_inliers)
-    imgs = np.unique(df['imageset_id'])
-    spot_counts = np.zeros(len(imgs))
-    for i in trange(len(spot_counts)):
-        spot_counts[i] = sum(df['imageset_id'] == i)
+    # Extract data from reflection table                                                  
+    df, rmsds = get_rmsds(refls, refined=refined, custom_inliers=custom_inliers)          
+    inliers = df[df['inlier']]                                                            
+    inliers[['dX', 'dY']] = inliers[['X', 'Y']].to_numpy() - inliers[['Xpred', 'Ypred']]  
+                                                                                          
+    rmsd_x = inliers.groupby('imageset_id').apply(lambda x: np.square(x['dX'].to_numpy()).mean())                                                                                   
+    rmsd_y = inliers.groupby('imageset_id').apply(lambda x: np.square(x['dY'].to_numpy()).mean())                                                                                   
+    rmsd_xy = inliers.groupby('imageset_id').apply(lambda x: np.linalg.norm(x[['dX', 'dY']].to_numpy(), axis=1).mean())                                                             
+                                                                                          
+    imgs = np.unique(df['imageset_id'])                                                   
+    spot_counts = df[['imageset_id', 'inlier']].groupby("imageset_id").sum()              
 
-    # Plot data
-    fig, axs = plt.subplots(4)
-    axs[0].plot(imgs, rmsds[:, 0], 'r')
-    axs[0].set(ylabel='X RMSD (px)')
-    axs[1].plot(imgs, rmsds[:, 1], 'b')
-    axs[1].set(ylabel='Y RMSD (px)')
-    axs[2].plot(imgs, rmsds[:, 2], 'm')
-    axs[2].set(ylabel='Total RMSD (px)')
-    axs[3].plot(imgs, spot_counts, 'k')
-    axs[3].set(xlabel='Image')
-    axs[3].set(ylabel='Total Spots')
-    fig.suptitle('Centroid RMSDs per Image')
-    plt.show()
+    # Plot data                                   
+    fig, axs = plt.subplots(4)                    
+    inliers = df['inlier']                        
+    axs[0].plot(imgs, rmsd_x, 'r')                
+    axs[0].set(ylabel='X RMSD (px)')              
+    axs[1].plot(imgs, rmsd_y, 'b')                
+    axs[1].set(ylabel='Y RMSD (px)')              
+    axs[2].plot(imgs, rmsd_xy, 'm')               
+    axs[2].set(ylabel='Total RMSD (px)')          
+    axs[3].plot(imgs, spot_counts.to_numpy(), 'k')
+    axs[3].set(xlabel='Image')                    
+    axs[3].set(ylabel='Total Spots')              
+    fig.suptitle('Centroid RMSDs per Image')      
+    plt.show()                                    
 
     if image >= 0:
         if not (image in imgs):
