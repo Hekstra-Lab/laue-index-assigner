@@ -56,8 +56,8 @@ def sequence_to_stills(experiments, reflections, params):
     assert len(reflections) == 1
     reflections = reflections[0]
 
-    new_experiments = ExperimentList()
-    new_reflections = flex.reflection_table()
+    new_experiments = []
+    new_reflections = []
 
 #    # This is the subset needed to integrate
 #    for key in [
@@ -74,10 +74,7 @@ def sequence_to_stills(experiments, reflections, params):
 #        "xyzobs.px.value",
 #        "xyzobs.px.variance",
 #    ]:
-    for key in reflections.keys():
-        new_reflections[key] = type(reflections[key])()
     reflections["imageset_id"] = flex.int(len(reflections), 0)
-    new_reflections["imageset_id"] = flex.int()
 #        elif key == "entering":
 #            reflections["entering"] = flex.bool(len(reflections), False)
 #            new_reflections["entering"] = flex.bool()
@@ -88,6 +85,7 @@ def sequence_to_stills(experiments, reflections, params):
     crystals = []
     imagesets = []
 
+    print('Building experiment lists.')
     for expt_id, experiment in enumerate(experiments):
         # Generate crystals and imagesets for each scan point on first loop
         if(first_loop):
@@ -156,18 +154,18 @@ def sequence_to_stills(experiments, reflections, params):
             new_experiments.append(new_experiment)
 
 # ----------------EXPERIMENTS CREATED---------------------------------
-
+    print('Building reflection table.')
     for i_scan_point in trange(len(crystals)):
         # Get subset of reflections on this image
         _, _, _, _, z1, z2 = reflections["bbox"].parts()
         subrefls = reflections.select((i_scan_point >= z1) & (i_scan_point < z2))
         new_refls = subrefls.copy()
         new_refls['xyzobs.px.value'] = subrefls['xyzobs.px.value'] - [0.,0.,0.5]
-        new_refls['imageset_id'] = flex.int(new_refls['xyzobs.px.value'].parts()[2].as_numpy_array())
+        new_refls['imageset_id'] = flex.int(len(new_refls), 0)
         x, y, _ = subrefls['xyzobs.mm.value'].parts()
         new_refls['xyzobs.mm.value'] = flex.vec3_double(x, y, flex.double(len(new_refls), 0))
-        new_refls['id'] = flex.int([i_scan_point]*len(new_refls))
-        new_reflections.extend(new_refls)
+        new_refls['id'] = flex.int(len(new_refls), 0)
+        new_reflections.append(new_refls)
     return (new_experiments, new_reflections)
 
 
@@ -207,8 +205,12 @@ def run(args=None, phil=phil_scope):
         experiments, reflections, params
     )
     # Write out the output experiments, reflections
-    new_experiments.as_file(params.output.experiments)
-    new_reflections.as_file(params.output.reflections)
+    print('Writing output data.')
+    for i in trange(len(new_experiments)):
+        elist = ExperimentList()
+        elist.append(new_experiments[i])
+        elist.as_file(f'dials_temp_files/stills/split_image{i:06d}.expt')
+        new_reflections[i].as_file(f'dials_temp_files/stills/split_image{i:06d}.refl')
 
 
 if __name__ == "__main__":
