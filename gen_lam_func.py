@@ -20,17 +20,14 @@ def gen_kde(elist, refls):
     refls = refls.select(flex.bool(~harmonics))
 
     # Get rlps and normalize
-    print('Calculating rlps')
     refls.map_centroids_to_reciprocal_space(elist)
     rlps = refls['rlp'].as_numpy_array()
     norms = np.linalg.norm(rlps, axis=1)
     
     # Get wavelength of rlp
-    print('Getting wavelengths')
     lams = refls['Wavelength'].as_numpy_array()
     
     # Fit with kernel density estimator
-    print('Training KDE')
     normalized_resolution = norms**2
     train_data = np.asarray([normalized_resolution, lams])
     kde = scipy.stats.gaussian_kde(train_data)

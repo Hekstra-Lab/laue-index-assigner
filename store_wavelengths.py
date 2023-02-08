@@ -8,10 +8,19 @@ from dxtbx.model.experiment_list import ExperimentListFactory
 from dials.array_family.flex import reflection_table
 from dials.array_family import flex
 from tqdm import tqdm, trange
+import argparse                                                             
+                                                                            
+# Get I/O options from user                                                 
+parser = argparse.ArgumentParser()                                          
+parser.add_argument('image_num', type=int, help='Image number to analyze.') 
+args = parser.parse_args()                                                  
+                                                                            
+# Set parameters                                                            
+image_analyzed = args.image_num                                             
 
 # Parse arguments for filenames
-expt_file = 'dials_temp_files/mega_ultra_refined.expt'
-refl_file = 'dials_temp_files/mega_ultra_refined.refl'
+expt_file = f'dials_temp_files/refinement/mega_ultra_refined{image_analyzed:06d}.expt'
+refl_file = f'dials_temp_files/refinement/mega_ultra_refined{image_analyzed:06d}.refl'
 
 # Load DIALS files
 elist = ExperimentListFactory.from_json_file(expt_file, check_format=False)

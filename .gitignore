@@ -7,3 +7,13 @@ __pycache__/
 *.html
 e080_raw_data/*
 config_params.txt
+hewl_scripts/*
+merge/*
+merge_dials/*
+dials_integration_fitted/*
+our_integration_method/*
+phenix_scripts/*
+phenix_refine/*
+test/*
+reference_data/*
+cluster_scripts/*

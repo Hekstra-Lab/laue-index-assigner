@@ -8,6 +8,15 @@ from dials.array_family.flex import reflection_table
 from dials.array_family import flex
 from cctbx.sgtbx import space_group
 from cctbx.uctbx import unit_cell
+import argparse                                                                                               
+                                                                                                              
+# Get I/O options from user                                                                                   
+parser = argparse.ArgumentParser()                                                                            
+parser.add_argument('image_num', type=int, help='Image number to analyze.')
+args = parser.parse_args()                                                                                    
+
+# Set parameters                                                                                              
+image_analyzed = args.image_num
 
 # Hyperparameters for indexer
 macro_cycles = 3
@@ -16,13 +25,13 @@ lam_max = 1.15
 d_min = 1.4
 rlp_radius = 0.002
 n_steps = 10
-new_expt_filename = 'dials_temp_files/optimized.expt'
-new_refl_filename = 'dials_temp_files/optimized.refl'
+new_expt_filename = f'dials_temp_files/assignment/optimized{image_analyzed:06d}.expt'
+new_refl_filename = f'dials_temp_files/assignment/optimized{image_analyzed:06d}.refl'
 
 # Load DIALS files
 print('Loading DIALS files')
-expt_file = "dials_temp_files/stills_no_sb.expt"
-refl_file = "dials_temp_files/stills_no_sb.refl"
+expt_file = f"dials_temp_files/stills/split_image{image_analyzed:06d}.expt"
+refl_file = f"dials_temp_files/stills/split_image{image_analyzed:06d}.refl"
 
 elist = ExperimentListFactory.from_json_file(expt_file, check_format=False)
 refls = reflection_table.from_file(refl_file)
@@ -65,15 +74,15 @@ for i in trange(len(elist.imagesets())):
     # Optimize Miller indices
     la.assign()
     for j in range(macro_cycles):
+        la.reset_inliers()
         la.update_rotation()
         la.assign()
         la.reject_outliers()
+        la.update_rotation()
         la.assign()
-    la.reset_inliers()
-    la.assign()
 
-    # Recalculate s1 based on new wavelengths
-    s1 = la.s1 / la.wav[:,None]
+    # Update s1 based on new wavelengths
+    s1[la._inliers] = la.s1 / la.wav[:,None]
 
     # Reset crystal parameters based on new geometry
     cryst.set_U(la.R.flatten())
@@ -107,4 +116,5 @@ elist.as_file(new_expt_filename)
 
 # Write out reflection file
 print('Writing reflection data.')
+refls = refls.select(refls['Wavelength'] != 0) # Remove unindexed reflections
 refls.as_file(new_refl_filename)
